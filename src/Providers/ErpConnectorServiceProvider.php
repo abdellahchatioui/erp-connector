@@ -19,6 +19,8 @@ class ErpConnectorServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../Config/erp.php' => config_path('erp.php'),
         ]);
+
+        $this->app['router']->aliasMiddleware('erp.verify', \Webkul\ErpConnector\Http\Middleware\VerifyErpToken::class);
     }
 
     /**

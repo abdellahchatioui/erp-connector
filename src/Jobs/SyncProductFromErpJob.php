@@ -65,11 +65,13 @@ class SyncProductFromErpJob implements ShouldQueue
             'status'               => $erpProduct['status'] ?? 1,
             'visible_individually' => 1,
             'guest_checkout'       => 1,
+            'featured'             => 1,
+            'new'                  => 1,
             'short_description'    => $erpProduct['short_description'] ?? '',
             'description'          => $erpProduct['description'] ?? '',
             'url_key'              => strtolower(str_replace(' ', '-', $erpProduct['name'] ?? $this->sku)),
             'inventories'          => [
-                1 => $erpProduct['quantity'] ?? 100, // Assign stock (Source ID 1)
+                1 => $erpProduct['quantity'] ?? 1, // Assign stock (Source ID 1)
             ],
             'channels'             => [
                 1 // Assign to Channel ID 1
@@ -89,7 +91,7 @@ class SyncProductFromErpJob implements ShouldQueue
             
             $baseData = [
                 'sku'                 => $this->sku,
-                'type'                => 'simple', // Assuming 'simple' product type
+                'type'                => 'simple', 
                 'attribute_family_id' => 1,        // Default attribute family
             ];
 
