@@ -42,37 +42,6 @@ class ErpConnectorServiceProvider extends ServiceProvider
             }
         }
 
-        // Add the Simple Test Connection JS function
-        view()->composer('admin::configuration.index', function ($view) {
-            echo "<script>
-                window.testErpConnection = function() {
-                    const btn = event.target;
-                    const originalText = btn.innerText;
-                    btn.innerText = 'Testing...';
-                    btn.disabled = true;
-
-                    fetch('" . route('admin.erp.connection.run') . "', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': '" . csrf_token() . "',
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        alert(data.message);
-                        btn.innerText = originalText;
-                        btn.disabled = false;
-                    })
-                    .catch(error => {
-                        alert('Error: ' + error.message);
-                        btn.innerText = originalText;
-                        btn.disabled = false;
-                    });
-                }
-            </script>";
-        });
     }
 
     /**
