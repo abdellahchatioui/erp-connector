@@ -1,13 +1,15 @@
 # Bagisto ERP Connector
 
-A powerful integration package for [Bagisto](https://bagisto.com/) that enables seamless synchronization between your e-commerce store and an external ERP system.
+A powerful, secure integration package for [Bagisto](https://bagisto.com/) that enables seamless synchronization between your e-commerce store and an external ERP system.
 
 ## Features
 
+- **Admin UI Configuration:** Configure your ERP connection directly from the Bagisto Admin Panel.
+- **Secure Token Storage:** API tokens are securely encrypted before being stored in the database.
+- **Connectivity Testing:** Built-in "Test Connection" tool to verify your ERP backend is reachable.
 - **Product Synchronization:** Receive product updates from your ERP via secure webhooks.
-- **Order Synchronization:** Automatically send order details to your ERP when an order is placed.
-- **Secure Communication:** Built-in middleware to verify API tokens for all incoming ERP requests.
-- **Configurable:** Easy-to-use configuration file and environment variable support.
+- **Order Synchronization:** Automatically push order details to your ERP via event listeners when an order is placed.
+- **Secure Webhooks:** Built-in middleware to verify API tokens for all incoming requests.
 
 ## Installation
 
@@ -16,47 +18,39 @@ A powerful integration package for [Bagisto](https://bagisto.com/) that enables 
 In your Bagisto project root, run:
 
 ```bash
-composer require abdellahchatioui/erp-connector:dev-main
+composer require abdellahchatioui/erp-connector
 ```
 
-### 2. Configure Environment Variables
+### 2. Clear Cache
 
-Add the following keys to your `.env` file:
-
-```env
-ERP_BASE_URL=http://your-erp-url.com
-ERP_API_TOKEN=your_secure_token_here
-
-# Recommended to avoid Algolia dependency errors if not using it
-SCOUT_DRIVER=null
-```
-
-### 3. Publish Configuration
-
-Publish the `erp.php` config file to your application:
+Clear the application cache so Bagisto auto-discovers the package and loads the new configuration UI:
 
 ```bash
-php artisan vendor:publish --provider="Webkul\ErpConnector\Providers\ErpConnectorServiceProvider"
+php artisan optimize:clear
+php artisan config:cache
 ```
 
-### 4. Run Migrations
+## Configuration
 
-Ensure your database is up to date:
+We have removed the need for `.env` variables! All configuration is now securely managed via the Admin Panel.
 
-```bash
-php artisan migrate
-```
+1. Log into your Bagisto **Admin Panel**.
+2. Navigate to **Settings > Configuration > ERP Connector**.
+3. Enter your **ERP Backend URL** (e.g., `http://localhost:8080`).
+4. Enter your **ERP Token**.
+5. Click **Save Settings**.
+6. Click **Test Connection** to immediately verify that Bagisto can communicate with your ERP system.
 
 ## API Endpoints
 
-The package exposes the following webhook endpoints (prefixed with `/api/erp`):
+The package exposes the following webhook endpoints in Bagisto (prefixed with `/api/erp`):
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/erp/webhook/product` | Sync product data from ERP |
 | POST | `/api/erp/webhook/order` | Sync order data from ERP |
 
-*Note: All requests must include the `Authorization: Bearer <your_token>` header or `X-ERP-TOKEN` header.*
+*Note: All requests sent to Bagisto must include the `X-ERP-TOKEN` header matching the token saved in your Admin settings.*
 
 ## License
 
