@@ -16,7 +16,9 @@ class VerifyErpToken
      */
     public function handle(Request $request, Closure $next)
     {
-        $expectedToken = config('erp.api_token');
+        $erpConfig = app(\Webkul\ErpConnector\Helpers\Config::class);
+        $expectedToken = $erpConfig->getErpToken();
+        
         $providedToken = $request->bearerToken() ?? $request->header('X-ERP-TOKEN');
 
         if (empty($expectedToken) || $providedToken !== $expectedToken) {

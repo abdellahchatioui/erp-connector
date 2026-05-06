@@ -35,8 +35,9 @@ class PushOrderToErpJob implements ShouldQueue
      */
     public function handle()
     {
-        $erpUrl = config('erp.url');
-        $erpToken = config('erp.api_token');
+        $erpConfig = app(\Webkul\ErpConnector\Helpers\Config::class);
+        $erpUrl = $erpConfig->getErpUrl();
+        $erpToken = $erpConfig->getErpToken();
 
         Log::info("Pushing Order ID {$this->order->id} to ERP.");
 
