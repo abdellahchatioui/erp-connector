@@ -4,6 +4,8 @@ namespace Webkul\ErpConnector\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Webkul\ErpConnector\Helpers\Config;
 
 class ConnectionController extends Controller
@@ -23,8 +25,8 @@ class ConnectionController extends Controller
      */
     public function test()
     {
-        $url = $this->erpConfig->getErpUrl();
-        $token = $this->erpConfig->getErpToken();
+        $url = request()->input('backend_url') ?: $this->erpConfig->getErpUrl();
+        $token = request()->input('erp_token') ?: $this->erpConfig->getErpToken();
 
         if (!$url || !$token) {
             return response()->json([
@@ -33,7 +35,16 @@ class ConnectionController extends Controller
             ]);
         }
 
+        // Decrypt the token if it is encrypted (e.g. read from database value populated in input)
         try {
+            $token = Crypt::decryptString($token);
+        } catch (DecryptException $e) {
+            // Token is raw/unencrypted (newly typed by user), use as-is
+        }
+
+        try {
+            $url = rtrim($url, '/');
+
             // Call a health-check or simple endpoint on the ERP
             $response = Http::timeout(5)
                 ->withHeaders(['X-ERP-TOKEN' => $token])
@@ -46,9 +57,10 @@ class ConnectionController extends Controller
                 ]);
             }
 
+            $errorMsg = $response->body() ?: $response->reason();
             return response()->json([
                 'status' => 'error',
-                'message' => trans('erp::app.admin.connection.failed', ['message' => $response->reason()])
+                'message' => trans('erp::app.admin.connection.failed', ['message' => $errorMsg])
             ]);
 
         } catch (\Exception $e) {

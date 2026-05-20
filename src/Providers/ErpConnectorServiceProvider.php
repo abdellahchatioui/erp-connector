@@ -19,6 +19,8 @@ class ErpConnectorServiceProvider extends ServiceProvider
 
         $this->loadTranslationsFrom(__DIR__ . '/../Resources/lang', 'erp');
 
+        $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'erp');
+
         $this->publishes([
             __DIR__ . '/../Config/erp.php' => config_path('erp.php'),
         ]);
