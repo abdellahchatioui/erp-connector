@@ -45,27 +45,36 @@ class ConnectionController extends Controller
         try {
             $url = rtrim($url, '/');
 
-            // Call a health-check or simple endpoint on the ERP
-            $response = Http::timeout(5)
+            // 1. Get JWT access token from Keycloak
+            $jwt = app(\Webkul\ErpConnector\Services\KeycloakTokenService::class)->getToken();
+
+            \Log::info('ERP Connection Test', [
+                'url'       => "{$url}/api/erp/verify",
+                'jwt'       => substr($jwt, 0, 30) . '...',
+                'erpToken'  => substr($token, 0, 10) . '...',
+            ]);
+
+            // 2. Call ERP verify endpoint with BOTH headers
+            $response = Http::withToken($jwt)
                 ->withHeaders(['X-ERP-TOKEN' => $token])
+                ->timeout(5)
                 ->get("{$url}/api/erp/verify");
 
             if ($response->successful()) {
                 return response()->json([
-                    'status' => 'success',
+                    'status'  => 'success',
                     'message' => trans('erp::app.admin.connection.success')
                 ]);
             }
 
             $errorMsg = $response->body() ?: $response->reason();
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => trans('erp::app.admin.connection.failed', ['message' => $errorMsg])
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => trans('erp::app.admin.connection.failed', ['message' => $e->getMessage()])
             ]);
         }

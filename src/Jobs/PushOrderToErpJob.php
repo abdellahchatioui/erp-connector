@@ -35,9 +35,15 @@ class PushOrderToErpJob implements ShouldQueue
      */
     public function handle()
     {
-        $erpConfig = app(\Webkul\ErpConnector\Helpers\Config::class);
-        $erpUrl = $erpConfig->getErpUrl();
+        // 
         $erpToken = $erpConfig->getErpToken();
+        // Retrieve JWT from Keycloak
+        $jwt = app(\Webkul\ErpConnector\Services\KeycloakTokenService::class)->getToken();
+        \Log::info('PushOrderToErpJob: Sending order to ERP', [
+            'erpUrl' => $erpUrl,
+            'erpToken' => $erpToken,
+            'jwt' => substr($jwt, 0, 20)."..."
+        ]);
 
         Log::info("Pushing Order ID {$this->order->id} to ERP.");
 
@@ -58,7 +64,9 @@ class PushOrderToErpJob implements ShouldQueue
 
         try {
             // Send HTTP POST request to the ERP with a timeout to prevent hanging
-            $response = Http::timeout(10)->withHeaders(['X-ERP-TOKEN' => $erpToken])
+            $response = Http::timeout(10)
+                ->withToken($jwt)
+                ->withHeaders(['X-ERP-TOKEN' => $erpToken])
                 ->post("{$erpUrl}/api/erp/orders", $mappedOrder);
 
             if ($response->failed()) {

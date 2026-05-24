@@ -57,6 +57,19 @@ class ErpConnectorServiceProvider extends ServiceProvider
             __DIR__ . '/../Config/erp.php', 'erp'
         );
 
+        // Merge keycloak config
+        $this->mergeConfigFrom(
+            __DIR__ . '/../Config/keycloak.php', 'keycloak'
+        );
+
+        // Bind KeycloakTokenService as singleton
+        $this->app->singleton(
+            \Webkul\ErpConnector\Services\KeycloakTokenService::class,
+            function ($app) {
+                return new \Webkul\ErpConnector\Services\KeycloakTokenService();
+            }
+        );
+
         $this->mergeConfigFrom(
             __DIR__ . '/../Config/system.php', 'core'
         );
