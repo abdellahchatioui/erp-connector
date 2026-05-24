@@ -7,6 +7,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Webkul\Product\Repositories\ProductRepository;
@@ -41,8 +43,17 @@ class SyncProductFromErpJob implements ShouldQueue
         $erpUrl = config('erp.url');
         $erpToken = config('erp.api_token');
 
-        // 1. Fetch full product data from the Spring Boot ERP
-        $response = Http::withToken($erpToken)
+        // Retrieve JWT from Keycloak
+        $jwt = app(\Webkul\ErpConnector\Services\KeycloakTokenService::class)->getToken();
+        \Log::info('SyncProductFromErpJob: Sending request to ERP', [
+            'erpUrl' => $erpUrl,
+            'erpToken' => $erpToken,
+            'jwt' => substr($jwt, 0, 20)."..."
+        ]);
+
+        // 1. Fetch full product data from the Spring Boot ERP with both headers
+        $response = Http::withToken($jwt)
+            ->withHeaders(['X-ERP-TOKEN' => $erpToken])
             ->get("{$erpUrl}/erp/products/sku/{$this->sku}");
 
         if ($response->failed()) {
@@ -54,6 +65,85 @@ class SyncProductFromErpJob implements ShouldQueue
         }
 
         $erpProduct = $response->json();
+
+        // 1.5 Ensure "ERP Products" Category and Homepage Customizations exist
+        $categoryId = 2; // Default fallback
+        $erpCategoryTranslation = DB::table('category_translations')->where('slug', 'erp-products')->first();
+        
+        if ($erpCategoryTranslation) {
+            $categoryId = $erpCategoryTranslation->category_id;
+            
+            // Ensure url_path is set correctly if it was empty
+            if (empty($erpCategoryTranslation->url_path)) {
+                DB::table('category_translations')
+                    ->where('id', $erpCategoryTranslation->id)
+                    ->update(['url_path' => 'erp-products']);
+                Log::info("Updated empty ERP Products Category url_path to 'erp-products'.");
+            }
+        } else {
+            // Find root category
+            $rootCategory = DB::table('categories')->whereNull('parent_id')->first() 
+                ?? DB::table('categories')->where('id', 1)->first();
+            $rootCategoryId = $rootCategory ? $rootCategory->id : 1;
+            
+            // Create Category
+            $categoryId = DB::table('categories')->insertGetId([
+                'parent_id'  => $rootCategoryId,
+                'position'   => 2,
+                'status'     => 1,
+                '_lft'       => 84, 
+                '_rgt'       => 85,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            
+            // Create Category Translation
+            DB::table('category_translations')->insert([
+                'category_id'      => $categoryId,
+                'locale'           => 'en',
+                'name'             => 'ERP Products',
+                'slug'             => 'erp-products',
+                'url_path'         => 'erp-products',
+                'description'      => 'Products synchronized from our ERP backend.',
+                'locale_id'        => 1,
+            ]);
+            
+            Log::info("Auto-created ERP Products Category with ID {$categoryId}.");
+        }
+
+        // Ensure Homepage Theme Customization for ERP Products exists
+        $customization = DB::table('theme_customizations')
+            ->where('type', 'product_carousel')
+            ->where('name', 'ERP Products')
+            ->first();
+            
+        if (!$customization) {
+            $customizationId = DB::table('theme_customizations')->insertGetId([
+                'theme_code' => 'default',
+                'type'       => 'product_carousel',
+                'name'       => 'ERP Products',
+                'sort_order' => 3,
+                'status'     => 1,
+                'channel_id' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            
+            DB::table('theme_customization_translations')->insert([
+                'theme_customization_id' => $customizationId,
+                'locale'                 => 'en',
+                'options'                => json_encode([
+                    'title'   => 'ERP Products',
+                    'filters' => [
+                        'category_id' => (string)$categoryId,
+                        'sort'        => 'created_at-desc',
+                        'limit'       => '10'
+                    ]
+                ])
+            ]);
+            
+            Log::info("Auto-created Homepage Product Carousel for ERP Products.");
+        }
 
         // 2. Map ERP data to Bagisto structure
         $mappedData = [
@@ -76,6 +166,10 @@ class SyncProductFromErpJob implements ShouldQueue
             'channels'             => [
                 1 // Assign to Channel ID 1
             ],
+            'categories'           => [
+                1, // Assign to Root category ID 1
+                $categoryId  // Assign to Dynamic Category ID
+            ],
         ];
 
         // 3. Check if the product already exists in Bagisto
@@ -84,7 +178,10 @@ class SyncProductFromErpJob implements ShouldQueue
         if ($existingProduct) {
             // Update existing product
             Log::info("Updating existing Bagisto product: {$this->sku}");
-            $productRepository->update($mappedData, $existingProduct->id);
+            $product = $productRepository->update($mappedData, $existingProduct->id);
+            
+            // Dispatch update event to trigger Flat Indexer and other indices
+            Event::dispatch('catalog.product.update.after', $product);
         } else {
             // Create new product
             Log::info("Creating new Bagisto product: {$this->sku}");
@@ -97,8 +194,14 @@ class SyncProductFromErpJob implements ShouldQueue
 
             $newProduct = $productRepository->create($baseData);
             
+            // Dispatch create event
+            Event::dispatch('catalog.product.create.after', $newProduct);
+            
             // Immediately update it with the mapped EAV data
-            $productRepository->update($mappedData, $newProduct->id);
+            $updatedProduct = $productRepository->update($mappedData, $newProduct->id);
+            
+            // Dispatch update event to rebuild Flat Index and Price/Inventory/Elasticsearch indices
+            Event::dispatch('catalog.product.update.after', $updatedProduct);
         }
 
         Log::info("Successfully synced product {$this->sku} from ERP.");

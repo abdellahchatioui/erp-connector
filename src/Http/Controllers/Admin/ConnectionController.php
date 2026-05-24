@@ -4,6 +4,8 @@ namespace Webkul\ErpConnector\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Webkul\ErpConnector\Helpers\Config;
 
 class ConnectionController extends Controller
@@ -23,8 +25,8 @@ class ConnectionController extends Controller
      */
     public function test()
     {
-        $url = $this->erpConfig->getErpUrl();
-        $token = $this->erpConfig->getErpToken();
+        $url = request()->input('backend_url') ?: $this->erpConfig->getErpUrl();
+        $token = request()->input('erp_token') ?: $this->erpConfig->getErpToken();
 
         if (!$url || !$token) {
             return response()->json([
@@ -33,27 +35,46 @@ class ConnectionController extends Controller
             ]);
         }
 
+        // Decrypt the token if it is encrypted (e.g. read from database value populated in input)
         try {
-            // Call a health-check or simple endpoint on the ERP
-            $response = Http::timeout(5)
+            $token = Crypt::decryptString($token);
+        } catch (DecryptException $e) {
+            // Token is raw/unencrypted (newly typed by user), use as-is
+        }
+
+        try {
+            $url = rtrim($url, '/');
+
+            // 1. Get JWT access token from Keycloak
+            $jwt = app(\Webkul\ErpConnector\Services\KeycloakTokenService::class)->getToken();
+
+            \Log::info('ERP Connection Test', [
+                'url'       => "{$url}/api/erp/verify",
+                'jwt'       => substr($jwt, 0, 30) . '...',
+                'erpToken'  => substr($token, 0, 10) . '...',
+            ]);
+
+            // 2. Call ERP verify endpoint with BOTH headers
+            $response = Http::withToken($jwt)
                 ->withHeaders(['X-ERP-TOKEN' => $token])
+                ->timeout(5)
                 ->get("{$url}/api/erp/verify");
 
             if ($response->successful()) {
                 return response()->json([
-                    'status' => 'success',
+                    'status'  => 'success',
                     'message' => trans('erp::app.admin.connection.success')
                 ]);
             }
 
+            $errorMsg = $response->body() ?: $response->reason();
             return response()->json([
-                'status' => 'error',
-                'message' => trans('erp::app.admin.connection.failed', ['message' => $response->reason()])
+                'status'  => 'error',
+                'message' => trans('erp::app.admin.connection.failed', ['message' => $errorMsg])
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => trans('erp::app.admin.connection.failed', ['message' => $e->getMessage()])
             ]);
         }

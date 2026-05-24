@@ -19,6 +19,8 @@ class ErpConnectorServiceProvider extends ServiceProvider
 
         $this->loadTranslationsFrom(__DIR__ . '/../Resources/lang', 'erp');
 
+        $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'erp');
+
         $this->publishes([
             __DIR__ . '/../Config/erp.php' => config_path('erp.php'),
         ]);
@@ -53,6 +55,19 @@ class ErpConnectorServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(
             __DIR__ . '/../Config/erp.php', 'erp'
+        );
+
+        // Merge keycloak config
+        $this->mergeConfigFrom(
+            __DIR__ . '/../Config/keycloak.php', 'keycloak'
+        );
+
+        // Bind KeycloakTokenService as singleton
+        $this->app->singleton(
+            \Webkul\ErpConnector\Services\KeycloakTokenService::class,
+            function ($app) {
+                return new \Webkul\ErpConnector\Services\KeycloakTokenService();
+            }
         );
 
         $this->mergeConfigFrom(
