@@ -35,14 +35,22 @@ class PushOrderToErpJob implements ShouldQueue
      */
     public function handle()
     {
-        // 
-        $erpToken = $erpConfig->getErpToken();
+        // Initialize ERP config variables
+        $erpConfig = app(\Webkul\ErpConnector\Helpers\Config::class);
+        $erpUrl    = rtrim($erpConfig->getErpUrl(), '/');
+        $erpToken  = $erpConfig->getErpToken();
+
+        if (empty($erpUrl) || empty($erpToken)) {
+            Log::error('PushOrderToErpJob: ERP URL or Token not configured in admin settings.');
+            return;
+        }
+
         // Retrieve JWT from Keycloak
         $jwt = app(\Webkul\ErpConnector\Services\KeycloakTokenService::class)->getToken();
         \Log::info('PushOrderToErpJob: Sending order to ERP', [
-            'erpUrl' => $erpUrl,
-            'erpToken' => $erpToken,
-            'jwt' => substr($jwt, 0, 20)."..."
+            'erpUrl'   => $erpUrl,
+            'erpToken' => substr($erpToken, 0, 15) . '...',
+            'jwt'      => substr($jwt, 0, 20) . '...'
         ]);
 
         Log::info("Pushing Order ID {$this->order->id} to ERP.");
