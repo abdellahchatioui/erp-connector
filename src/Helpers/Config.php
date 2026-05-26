@@ -50,4 +50,55 @@ class Config
         // This would be used for programmatic updates
         // For UI updates, we use an event listener
     }
+
+    /**
+     * Get Keycloak Token URL
+     *
+     * @return string|null
+     */
+    public function getKeycloakTokenUrl()
+    {
+        return core()->getConfigData('erp.settings.general.keycloak_token_url');
+    }
+
+    /**
+     * Get Keycloak Client ID
+     *
+     * @return string|null
+     */
+    public function getKeycloakClientId()
+    {
+        return core()->getConfigData('erp.settings.general.keycloak_client_id');
+    }
+
+    /**
+     * Get Keycloak Username
+     *
+     * @return string|null
+     */
+    public function getKeycloakUsername()
+    {
+        return core()->getConfigData('erp.settings.general.keycloak_username');
+    }
+
+    /**
+     * Get Keycloak Password (Decrypted)
+     *
+     * @return string|null
+     */
+    public function getKeycloakPassword()
+    {
+        $password = core()->getConfigData('erp.settings.general.keycloak_password');
+
+        if (! $password) {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($password);
+        } catch (\Exception $e) {
+            // Fallback for plain text password if not yet encrypted
+            return $password;
+        }
+    }
 }

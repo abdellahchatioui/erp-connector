@@ -35,18 +35,35 @@ class ConnectionController extends Controller
             ]);
         }
 
-        // Decrypt the token if it is encrypted (e.g. read from database value populated in input)
+        // Decrypt the ERP token if it is encrypted (e.g. read from database value populated in input)
         try {
             $token = Crypt::decryptString($token);
         } catch (DecryptException $e) {
             // Token is raw/unencrypted (newly typed by user), use as-is
         }
 
+        // Gather Keycloak overrides if provided in the test request
+        $keycloakOverrides = [
+            'token_url' => request()->input('keycloak_token_url') ?: $this->erpConfig->getKeycloakTokenUrl(),
+            'client_id' => request()->input('keycloak_client_id') ?: $this->erpConfig->getKeycloakClientId(),
+            'username'  => request()->input('keycloak_username') ?: $this->erpConfig->getKeycloakUsername(),
+            'password'  => request()->input('keycloak_password') ?: $this->erpConfig->getKeycloakPassword(),
+        ];
+
+        // Decrypt the Keycloak password if it is encrypted
+        if (!empty($keycloakOverrides['password'])) {
+            try {
+                $keycloakOverrides['password'] = Crypt::decryptString($keycloakOverrides['password']);
+            } catch (DecryptException $e) {
+                // Password is raw/unencrypted (newly typed by user), use as-is
+            }
+        }
+
         try {
             $url = rtrim($url, '/');
 
             // 1. Get JWT access token from Keycloak
-            $jwt = app(\Webkul\ErpConnector\Services\KeycloakTokenService::class)->getToken();
+            $jwt = app(\Webkul\ErpConnector\Services\KeycloakTokenService::class)->getToken($keycloakOverrides);
 
             \Log::info('ERP Connection Test', [
                 'url'       => "{$url}/api/erp/verify",

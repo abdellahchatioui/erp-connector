@@ -21,23 +21,29 @@ class ErpConnectorServiceProvider extends ServiceProvider
 
         $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'erp');
 
-        $this->publishes([
-            __DIR__ . '/../Config/erp.php' => config_path('erp.php'),
-        ]);
 
         $this->app['router']->aliasMiddleware('erp.verify', \Webkul\ErpConnector\Http\Middleware\VerifyErpToken::class);
 
-        // Professional Hook: Encrypt the token in the request before it's saved to the database
-        if ($this->app->runningInConsole() === false && request()->isMethod('post') && request()->has('erp.settings.general.erp_token')) {
-            $token = request()->input('erp.settings.general.erp_token');
-            
-            if ($token) {
+        // Professional Hook: Encrypt the token and keycloak password in the request before they're saved to the database
+        if ($this->app->runningInConsole() === false && request()->isMethod('post') && request()->has('erp.settings.general')) {
+            $general = request()->input('erp.settings.general');
+            $updated = false;
+
+            if (isset($general['erp_token']) && !empty($general['erp_token'])) {
+                $general['erp_token'] = \Illuminate\Support\Facades\Crypt::encryptString($general['erp_token']);
+                $updated = true;
+            }
+
+            if (isset($general['keycloak_password']) && !empty($general['keycloak_password'])) {
+                $general['keycloak_password'] = \Illuminate\Support\Facades\Crypt::encryptString($general['keycloak_password']);
+                $updated = true;
+            }
+
+            if ($updated) {
                 request()->merge([
-                    'erp' => array_merge(request()->input('erp'), [
-                        'settings' => array_merge(request()->input('erp.settings'), [
-                            'general' => array_merge(request()->input('erp.settings.general'), [
-                                'erp_token' => \Illuminate\Support\Facades\Crypt::encryptString($token)
-                            ])
+                    'erp' => array_merge(request()->input('erp', []), [
+                        'settings' => array_merge(request()->input('erp.settings', []), [
+                            'general' => $general
                         ])
                     ])
                 ]);
@@ -53,14 +59,7 @@ class ErpConnectorServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->mergeConfigFrom(
-            __DIR__ . '/../Config/erp.php', 'erp'
-        );
-
-        // Merge keycloak config
-        $this->mergeConfigFrom(
-            __DIR__ . '/../Config/keycloak.php', 'keycloak'
-        );
+    
 
         // Bind KeycloakTokenService as singleton
         $this->app->singleton(
