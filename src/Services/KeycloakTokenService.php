@@ -24,9 +24,10 @@ class KeycloakTokenService
         return Cache::remember('keycloak_jwt', now()->addMinutes(4), function () {
             $response = $this->client->post($this->config['token_url'], [
                 'form_params' => [
-                    'grant_type'    => 'client_credentials',
+                    'grant_type'    => 'password',
                     'client_id'     => $this->config['client_id'],
-                    'client_secret' => $this->config['client_secret'],
+                    'username'      => $this->config['username'],
+                    'password'      => $this->config['password'],
                 ],
                 'timeout' => 5,
             ]);
