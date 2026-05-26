@@ -53,13 +53,22 @@
             // Dynamically select the input values from the DOM
             const urlEl = document.querySelector('input[name*="backend_url"]') || document.getElementById('erp[settings][general][backend_url]');
             const tokenEl = document.querySelector('input[name*="erp_token"]') || document.getElementById('erp[settings][general][erp_token]');
+            const keycloakUrlEl = document.querySelector('input[name*="keycloak_token_url"]');
+            const keycloakClientIdEl = document.querySelector('input[name*="keycloak_client_id"]');
+            const keycloakUsernameEl = document.querySelector('input[name*="keycloak_username"]');
+            const keycloakPasswordEl = document.querySelector('input[name*="keycloak_password"]');
+            
             const statusEl = document.getElementById("erp-test-status");
 
             const backendUrl = urlEl ? urlEl.value.trim() : '';
             const erpToken = tokenEl ? tokenEl.value.trim() : '';
+            const keycloakTokenUrl = keycloakUrlEl ? keycloakUrlEl.value.trim() : '';
+            const keycloakClientId = keycloakClientIdEl ? keycloakClientIdEl.value.trim() : '';
+            const keycloakUsername = keycloakUsernameEl ? keycloakUsernameEl.value.trim() : '';
+            const keycloakPassword = keycloakPasswordEl ? keycloakPasswordEl.value.trim() : '';
 
-            if (!backendUrl || !erpToken) {
-                alert("Please enter both the ERP Backend URL and Token first.");
+            if (!backendUrl || !erpToken || !keycloakTokenUrl || !keycloakClientId || !keycloakUsername || !keycloakPassword) {
+                alert("Please fill out all the connection details first.");
                 if (statusEl) {
                     statusEl.innerText = "⚠️ Missing Inputs";
                     statusEl.style.color = "#d97706";
@@ -84,7 +93,11 @@
                 },
                 body: JSON.stringify({
                     backend_url: backendUrl,
-                    erp_token: erpToken
+                    erp_token: erpToken,
+                    keycloak_token_url: keycloakTokenUrl,
+                    keycloak_client_id: keycloakClientId,
+                    keycloak_username: keycloakUsername,
+                    keycloak_password: keycloakPassword
                 })
             })
             .then(response => response.json())
