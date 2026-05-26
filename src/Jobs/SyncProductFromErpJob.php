@@ -40,15 +40,22 @@ class SyncProductFromErpJob implements ShouldQueue
     {
         Log::info("Starting ERP Sync for Product SKU: {$this->sku}");
 
-        $erpUrl = config('erp.url');
-        $erpToken = config('erp.api_token');
+        // Read ERP URL and token from admin UI settings (same source as ConnectionController)
+        $erpConfig = app(\Webkul\ErpConnector\Helpers\Config::class);
+        $erpUrl    = rtrim($erpConfig->getErpUrl(), '/');
+        $erpToken  = $erpConfig->getErpToken();
+
+        if (empty($erpUrl) || empty($erpToken)) {
+            Log::error('SyncProductFromErpJob: ERP URL or Token not configured in admin settings.');
+            return;
+        }
 
         // Retrieve JWT from Keycloak
         $jwt = app(\Webkul\ErpConnector\Services\KeycloakTokenService::class)->getToken();
         \Log::info('SyncProductFromErpJob: Sending request to ERP', [
-            'erpUrl' => $erpUrl,
-            'erpToken' => $erpToken,
-            'jwt' => substr($jwt, 0, 20)."..."
+            'erpUrl'   => $erpUrl,
+            'erpToken' => substr($erpToken, 0, 15) . '...',
+            'jwt'      => substr($jwt, 0, 20) . '...',
         ]);
 
         // 1. Fetch full product data from the Spring Boot ERP with both headers
