@@ -11,6 +11,15 @@ A powerful, secure integration package for [Bagisto](https://bagisto.com/) that 
 - **Order Synchronization:** Automatically push order details to your ERP via event listeners when an order is placed.
 - **Secure Webhooks:** Built-in middleware to verify API tokens for all incoming requests.
 
+## Requirements
+
+- **Server:** Apache 2 or NGINX
+- **Node.js:** 23.10.0 LTS or higher
+- **PHP:** 8.3 or higher
+- **Composer:** 2.5 or higher
+- **MySQL:** Version 8.0.32 or higher
+- **Keycloak:** Running and accessible for JWT authentication
+
 ## Installation
 
 ### 1. Install via Composer
