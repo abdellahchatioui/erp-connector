@@ -104,32 +104,32 @@
             </div>
 
             <!-- Auto Sync Panel -->
-            <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 mt-4">
-                <div class="flex items-center justify-between mb-3">
-                    <div>
-                        <div class="text-sm font-semibold">Auto Sync</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">Automatically sync products at regular intervals</div>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="auto-sync-toggle" class="sr-only peer">
-                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                </div>
-                <div id="auto-sync-settings" class="hidden">
-                    <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Sync Every</div>
-                    <select id="auto-sync-interval" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900">
-                        <option value="1">Every 1 hour</option>
-                        <option value="3">Every 3 hours</option>
-                        <option value="6" selected>Every 6 hours</option>
-                        <option value="12">Every 12 hours</option>
-                        <option value="24">Every 24 hours (Daily)</option>
-                    </select>
-                    <button id="save-auto-sync-btn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium">
-                        Save Auto Sync Settings
-                    </button>
-                </div>
-                <div id="auto-sync-status" class="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center"></div>
-            </div>
+<div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 mt-4">
+    <div class="flex items-center justify-between mb-3">
+        <div>
+            <div class="text-sm font-semibold">Auto Sync</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">Automatically sync products at regular intervals</div>
+        </div>
+    </div>
+
+    <div id="auto-sync-settings">
+        <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Sync Every</div>
+        <select id="auto-sync-interval" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900">
+            <option value="1">Every 1 hour</option>
+            <option value="3">Every 3 hours</option>
+            <option value="6" selected>Every 6 hours</option>
+            <option value="12">Every 12 hours</option>
+            <option value="24">Every 24 hours (Daily)</option>
+        </select>
+        
+        <button type="button" id="save-auto-sync-btn" 
+                class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium">
+            Save Auto Sync Settings
+        </button>
+    </div>
+    
+    <div id="auto-sync-status" class="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center"></div>
+</div>
 
             <div id="erp-sync-errors" class="mt-4 max-h-[160px] overflow-y-auto rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/10 p-3 hidden"></div>
             <div id="erp-sync-result" class="mt-4 text-sm font-semibold hidden"></div>
@@ -561,6 +561,57 @@
             result.style.display = '';
         }
     }
+
+        // ==================== FIXED AUTO SYNC ====================
+    function initAutoSync() {
+        const saveBtn = document.getElementById('save-auto-sync-btn');
+        const intervalSelect = document.getElementById('auto-sync-interval');
+        const statusEl = document.getElementById('auto-sync-status');
+
+        if (!saveBtn || !intervalSelect) return;
+
+        // Load saved settings
+        const saved = localStorage.getItem('erp_auto_sync');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                if (data.interval_minutes) {
+                    const hours = data.interval_minutes / 60;
+                    intervalSelect.value = String(hours);
+                }
+            } catch (e) {}
+        }
+
+        // Save button (prevent form submission)
+        saveBtn.addEventListener('click', function(e) {
+            e.preventDefault();        // ← This is the most important line
+            e.stopImmediatePropagation();
+
+            const hours = parseInt(intervalSelect.value) || 6;
+            const payload = {
+                enabled: true,
+                interval_minutes: hours * 60
+            };
+
+            localStorage.setItem('erp_auto_sync', JSON.stringify(payload));
+
+            if (statusEl) {
+                statusEl.innerHTML = `✅ Saved — will sync every ${hours} hour${hours > 1 ? 's' : ''}`;
+                statusEl.style.color = '#16a34a';
+            }
+
+            alert(`Auto Sync updated successfully! Every ${hours} hour${hours > 1 ? 's' : ''}.`);
+        });
+    }
+
+    // Run when page is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAutoSync);
+    } else {
+        initAutoSync();
+    }
+
+    
 
 })();
 </script>
