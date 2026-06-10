@@ -72,7 +72,31 @@ return [
                 'title'         => '',
                 'type'          => 'blade',
                 'path'          => 'erp::admin.connection-test-field',
-            ]
+            ],
+            [
+                'name'          => 'auto_sync',
+                'title'         => 'erp::app.admin.system.auto-sync',
+                'type'          => 'boolean',
+                'channel_based' => true,
+                'locale_based'  => false,
+            ],
+            [
+                'name'          => 'error_handling_mode',
+                'title'         => 'erp::app.admin.system.error-handling-mode',
+                'type'          => 'select',
+                'options'       => [
+                    [
+                        'title' => 'erp::app.admin.system.log-and-continue',
+                        'value' => 'log_and_continue',
+                    ],
+                    [
+                        'title' => 'erp::app.admin.system.abort-on-error',
+                        'value' => 'abort_on_error',
+                    ],
+                ],
+                'channel_based' => true,
+                'locale_based'  => false,
+            ],
         ]
     ]
 ];
