@@ -390,7 +390,7 @@
         });
     });
 
-    // ── Sync Panel Logic ───────────────────────────────────────────────────
+  // ── Sync Panel Logic ───────────────────────────────────────────────────
     let syncRunning   = false;
     let cancelRequest = false;
     let counts        = { total: 0, created: 0, updated: 0, failed: 0, disabled: 0 };
@@ -403,7 +403,7 @@
     }
 
     function setProgress(done, total) {
-        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+        const pct = total > 0 ? Math.round((done / total) * 100) : 100;
         const bar = $('erp-sync-progress-bar');
         if (bar) bar.style.width = pct + '%';
         const p = $('erp-sync-pct');
@@ -412,7 +412,6 @@
 
     function resetCounts(total) {
         counts = { total, created: 0, updated: 0, failed: 0, disabled: 0 };
-
         ['total','created','updated','failed','disabled'].forEach(k => {
             const el = $('sp-' + k);
             if (el) el.textContent = (k === 'total') ? total : 0;
@@ -434,7 +433,6 @@
     function addError(sku, msg) {
         const list = $('erp-sync-errors');
         if (!list) return;
-
         list.classList.remove('hidden');
         const row = document.createElement('div');
         row.className = 'sp-error-item text-red-600 dark:text-red-400 py-1';
@@ -457,14 +455,14 @@
         if (e) e.textContent = t;
     }
 
-    // Cancel button
+    // Cancel
     document.addEventListener('click', function(e) {
         if (!e.target.closest('#erp-sync-cancel-btn')) return;
         cancelRequest = true;
         setBadge('Cancelling…', 'sp-badge-warn');
     });
 
-    // Sync button
+    // Sync Button
     document.addEventListener('click', function(e) {
         if (!e.target.closest('#erp-sync-btn')) return;
         e.preventDefault();
@@ -477,11 +475,9 @@
 
         const btn = $('erp-sync-btn');
         if (btn) btn.disabled = true;
-
         const btnTxt = $('erp-sync-btn-txt');
         if (btnTxt) btnTxt.textContent = '⏳ Syncing…';
 
-        // Reset UI
         ['progress-wrap','pct','ticker','stats'].forEach(showEl);
         hideEl('result');
 
@@ -496,17 +492,14 @@
         setTicker('Initializing…');
 
         try {
-            console.log('🚀 Starting sync...');
-
-            // Phase 1: Init
             const initRes = await fetch('{{ route("admin.erp.sync.init") }}', {
-                method: 'POST', headers: jsonHeaders(), body: JSON.stringify({})
+                method: 'POST',
+                headers: jsonHeaders(),
+                body: JSON.stringify({})
             });
 
-            if (!initRes.ok) throw new Error(`Init HTTP ${initRes.status}`);
+            if (!initRes.ok) throw new Error('Init failed');
             const initData = await initRes.json();
-
-            console.log('Init response:', initData);
 
             const toSync    = initData.to_sync    || [];
             const toDisable = initData.to_disable || [];
@@ -514,13 +507,35 @@
 
             resetCounts(total);
 
-            if (total === 0 && toDisable.length === 0) {
-                return finishSync('⚠️ No products found in ERP.', 'sp-badge-warn');
+            // === IMPROVED HANDLING FOR NO PRODUCTS CASE ===
+            if (total === 0) {
+                setProgress(100, 100);
+                setTicker('Finalizing…');
+
+                // Still run finalize (important for disabling products)
+                const fRes = await fetch('{{ route("admin.erp.sync.finalize") }}', {
+                    method: 'POST',
+                    headers: jsonHeaders(),
+                    body: JSON.stringify({
+                        processed_skus: [],
+                        to_disable: toDisable
+                    })
+                });
+
+                const fData = await fRes.json();
+                const disabledCount = fData.disabled_count || 0;
+
+                setDisabledCount(disabledCount);
+
+                if (disabledCount > 0) {
+                    finishSync(`✅ Done! ${disabledCount} product(s) disabled.`, 'sp-badge-success');
+                } else {
+                    finishSync('✅ Everything is up to date. No changes needed.', 'sp-badge-success');
+                }
+                return;
             }
 
-            console.log(`Found ${total} products to sync, ${toDisable.length} to disable`);
-
-            // Phase 2: Sync each product
+            // Normal case: products to sync
             const processed = [];
             for (let i = 0; i < toSync.length; i++) {
                 if (cancelRequest) break;
@@ -528,8 +543,6 @@
                 const sku = toSync[i];
                 setTicker(`Processing: ${sku} (${i + 1} / ${total})`);
                 setProgress(i, total);
-
-                console.log(`Syncing SKU: ${sku}`);
 
                 try {
                     const r = await fetch('{{ route("admin.erp.sync.sku") }}', {
@@ -539,7 +552,6 @@
                     });
 
                     const data = await r.json();
-                    console.log(`SKU ${sku} response:`, data);
 
                     if (data.success) {
                         processed.push(sku);
@@ -549,52 +561,38 @@
                         addError(sku, data.message || 'Unknown error');
                     }
                 } catch (err) {
-                    console.error(`Error syncing ${sku}:`, err);
                     incCount('failed');
-                    addError(sku, err.message || 'Network error');
+                    addError(sku, err.message);
                 }
 
-                // Small delay to prevent overwhelming server
-                await new Promise(r => setTimeout(r, 300));
+                await new Promise(r => setTimeout(r, 200)); // prevent server overload
             }
 
             setProgress(total, total);
             setTicker('Finalizing…');
 
-            // Phase 3: Finalize
+            // Finalize
             if (!cancelRequest) {
-                console.log('Calling finalize with', processed.length, 'processed SKUs');
                 const fRes = await fetch('{{ route("admin.erp.sync.finalize") }}', {
                     method: 'POST',
                     headers: jsonHeaders(),
-                    body: JSON.stringify({
-                        processed_skus: processed,
-                        to_disable: toDisable
-                    })
+                    body: JSON.stringify({ processed_skus: processed, to_disable: toDisable })
                 });
-
                 const fData = await fRes.json();
-                console.log('Finalize response:', fData);
-
                 const disabledCount = fData.disabled_count || 0;
                 setDisabledCount(disabledCount);
-
-                if (fData.errors && fData.errors.length) {
-                    fData.errors.forEach(e => addError(e.sku, e.error));
-                }
             }
 
-            // Final Result
+            // Final Status
             if (cancelRequest) {
                 finishSync('⚠️ Sync was cancelled.', 'sp-badge-warn');
             } else if (counts.failed > 0) {
-                finishSync(`⚠️ Partial sync — ${counts.failed} error(s). Check list below.`, 'sp-badge-warn');
+                finishSync(`⚠️ Partial sync — ${counts.failed} error(s).`, 'sp-badge-warn');
             } else {
                 finishSync(`✅ Sync complete! ${counts.created} created, ${counts.updated} updated.`, 'sp-badge-success');
             }
 
         } catch (err) {
-            console.error('Sync failed:', err);
             finishSync('❌ ' + err.message, 'sp-badge-error');
         } finally {
             syncRunning = false;
@@ -606,12 +604,8 @@
     }
 
     function finishSync(msg, badgeCls) {
-        syncRunning   = false;
-        cancelRequest = false;
-
         const btn = $('erp-sync-btn');
         if (btn) btn.disabled = false;
-
         const btnTxt = $('erp-sync-btn-txt');
         if (btnTxt) btnTxt.textContent = '🚀 Sync Products Now';
 
@@ -626,12 +620,12 @@
 
         const result = $('erp-sync-result');
         if (result) {
-            result.textContent  = msg;
-            result.style.color  = badgeCls === 'sp-badge-success' ? '#15803d'
-                                : badgeCls === 'sp-badge-error'   ? '#dc2626' : '#b45309';
+            result.textContent = msg;
+            result.style.color = badgeCls === 'sp-badge-success' ? '#15803d' :
+                                badgeCls === 'sp-badge-error' ? '#dc2626' : '#b45309';
             result.style.display = '';
         }
     }
-    
+
 })();
 </script>
