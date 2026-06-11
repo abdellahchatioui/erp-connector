@@ -103,7 +103,8 @@
                 </div>
             </div>
 
-            <!-- Auto Sync Panel -->
+         <!-- Auto Sync Panel -->
+<!-- Auto Sync Panel Component -->
 <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 mt-4">
     <div class="flex items-center justify-between mb-3">
         <div>
@@ -114,7 +115,9 @@
 
     <div id="auto-sync-settings">
         <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Sync Every</div>
-        <select id="auto-sync-interval" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900">
+        <select id="auto-sync-interval" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-sm">
+            <!-- Simplified Intervals -->
+            <option value="test-1">1 Minute (Testing)</option>
             <option value="1">Every 1 hour</option>
             <option value="3">Every 3 hours</option>
             <option value="6" selected>Every 6 hours</option>
@@ -122,14 +125,154 @@
             <option value="24">Every 24 hours (Daily)</option>
         </select>
         
-        <button type="button" id="save-auto-sync-btn" 
-                class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium">
+        <button type="button" 
+                id="save-auto-sync-btn" 
+                onclick="executeAutoSyncSave()"
+                class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors text-sm">
             Save Auto Sync Settings
         </button>
     </div>
     
+    <!-- Visual Status & Timestamp Fields -->
     <div id="auto-sync-status" class="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center"></div>
+    <div id="last-sync-timestamp" class="mt-1 text-xs text-gray-400 dark:text-gray-500 text-center font-medium"></div>
+    <div id="sync-countdown" class="mt-1 text-xs text-blue-500 text-center font-mono"></div>
 </div>
+
+<script>
+    let activeSyncTimer = null;
+
+    // 1. THE AUTOMATED TRIGGER ENGINE
+    function triggerProductSync() {
+        const realSyncBtn = document.getElementById('erp-sync-btn');
+        const timestampEl = document.getElementById('last-sync-timestamp');
+        
+        if (!realSyncBtn) {
+            console.error("❌ [Auto Sync Engine] Could not locate your manual sync target button: #erp-sync-btn");
+            return;
+        }
+
+        console.log("🔄 [Auto Sync Engine] Timer expired! Unlocking and executing real sync pipeline...");
+
+        // Remove the framework block attribute so the browser permits clicks
+        realSyncBtn.disabled = false;
+        
+        // Simulate an authentic programmatic mouse click to wake up your system's real scripts
+        realSyncBtn.click();
+
+        // Capture and display the timestamp immediately
+        if (timestampEl) {
+            const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            timestampEl.innerHTML = `🕒 Last auto-sync: <span class="text-gray-700 dark:text-gray-300 font-semibold">${currentTime}</span>`;
+            
+            // Save last execution timestamp to storage so it survives page reloads
+            localStorage.setItem('erp_last_sync_time', currentTime);
+        }
+    }
+
+    // 2. TIMING MONITOR LOOP
+    function startBackgroundEngine() {
+        if (activeSyncTimer) clearInterval(activeSyncTimer);
+
+        const saved = localStorage.getItem('erp_auto_sync');
+        if (!saved) return;
+
+        try {
+            const data = JSON.parse(saved);
+            if (!data.enabled || !data.interval_minutes) return;
+
+            const intervalMs = data.interval_minutes * 60 * 1000;
+            let timeRemainingMs = intervalMs;
+
+            const countdownEl = document.getElementById('sync-countdown');
+
+            activeSyncTimer = setInterval(() => {
+                timeRemainingMs -= 1000;
+
+                if (countdownEl) {
+                    const totalSeconds = Math.max(0, Math.floor(timeRemainingMs / 1000));
+                    const mins = Math.floor(totalSeconds / 60);
+                    const secs = totalSeconds % 60;
+                    countdownEl.innerText = `Next automatic sync in: ${mins}m ${secs}s`;
+                }
+
+                if (timeRemainingMs <= 0) {
+                    triggerProductSync();
+                    timeRemainingMs = intervalMs; // Reset and loop again
+                }
+            }, 1000);
+
+        } catch (e) {
+            console.error("Engine failed to loop properly:", e);
+        }
+    }
+
+    // 3. PERSIST DESIGN CONFIGURATIONS
+    function executeAutoSyncSave() {
+        const intervalSelect = document.getElementById('auto-sync-interval');
+        const statusEl = document.getElementById('auto-sync-status');
+
+        if (!intervalSelect) return;
+
+        const selectedValue = intervalSelect.value;
+        let minutes = 360;
+        let labelText = "";
+
+        if (selectedValue === 'test-1') {
+            minutes = 1;
+            labelText = `1 minute (Testing Mode)`;
+        } else {
+            const hours = parseInt(selectedValue) || 6;
+            minutes = hours * 60;
+            labelText = `${hours} hour${hours > 1 ? 's' : ''}`;
+        }
+
+        const payload = {
+            enabled: true,
+            interval_minutes: minutes,
+            raw_value: selectedValue,
+            updated_at: new Date().toISOString()
+        };
+
+        localStorage.setItem('erp_auto_sync', JSON.stringify(payload));
+
+        if (statusEl) {
+            statusEl.innerHTML = `✅ Auto Sync linked: active every ${labelText}`;
+            statusEl.style.color = '#16a34a';
+        }
+
+        startBackgroundEngine();
+        alert(`✅ Auto Sync Saved & Linked!\n\nWill trigger your 'Sync Products Now' button script every ${labelText}.`);
+    }
+
+    // 4. WORKSPACE AUTOMATION ON STARTUP
+    (function initOnLoad() {
+        const saved = localStorage.getItem('erp_auto_sync');
+        const lastSyncTime = localStorage.getItem('erp_last_sync_time');
+        const timestampEl = document.getElementById('last-sync-timestamp');
+
+        // Restore saved interval selection dropdown state
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                const intervalSelect = document.getElementById('auto-sync-interval');
+                if (intervalSelect && data.raw_value) {
+                    intervalSelect.value = data.raw_value;
+                }
+            } catch(e) {}
+        }
+
+        // Restore previous execution timestamp value on page reload
+        if (lastSyncTime && timestampEl) {
+            timestampEl.innerHTML = `🕒 Last auto-sync: <span class="text-gray-700 dark:text-gray-300 font-semibold">${lastSyncTime}</span>`;
+        }
+        
+        startBackgroundEngine();
+    })();
+</script>
+
+
+
 
             <div id="erp-sync-errors" class="mt-4 max-h-[160px] overflow-y-auto rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/10 p-3 hidden"></div>
             <div id="erp-sync-result" class="mt-4 text-sm font-semibold hidden"></div>
@@ -562,54 +705,8 @@
         }
     }
 
-        // ==================== FIXED AUTO SYNC ====================
-    function initAutoSync() {
-        const saveBtn = document.getElementById('save-auto-sync-btn');
-        const intervalSelect = document.getElementById('auto-sync-interval');
-        const statusEl = document.getElementById('auto-sync-status');
-
-        if (!saveBtn || !intervalSelect) return;
-
-        // Load saved settings
-        const saved = localStorage.getItem('erp_auto_sync');
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                if (data.interval_minutes) {
-                    const hours = data.interval_minutes / 60;
-                    intervalSelect.value = String(hours);
-                }
-            } catch (e) {}
-        }
-
-        // Save button (prevent form submission)
-        saveBtn.addEventListener('click', function(e) {
-            e.preventDefault();        // ← This is the most important line
-            e.stopImmediatePropagation();
-
-            const hours = parseInt(intervalSelect.value) || 6;
-            const payload = {
-                enabled: true,
-                interval_minutes: hours * 60
-            };
-
-            localStorage.setItem('erp_auto_sync', JSON.stringify(payload));
-
-            if (statusEl) {
-                statusEl.innerHTML = `✅ Saved — will sync every ${hours} hour${hours > 1 ? 's' : ''}`;
-                statusEl.style.color = '#16a34a';
-            }
-
-            alert(`Auto Sync updated successfully! Every ${hours} hour${hours > 1 ? 's' : ''}.`);
-        });
-    }
-
-    // Run when page is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initAutoSync);
-    } else {
-        initAutoSync();
-    }
+        // ==================== FINAL AUTO SYNC FIX ====================
+  
 
     
 
