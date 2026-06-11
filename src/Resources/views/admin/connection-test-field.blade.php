@@ -102,174 +102,78 @@
                     <div id="sp-failed" class="text-2xl font-bold text-red-600 dark:text-red-400 tracking-tight">0</div>
                 </div>
             </div>
+                 <!-- Auto Sync Background Job Logs -->
+        @php
+            $lastSyncJson = core()->getConfigData('erp.settings.general.last_sync_info');
+            $lastSyncInfo = $lastSyncJson ? json_decode($lastSyncJson, true) : null;
+        @endphp
 
-         <!-- Auto Sync Panel -->
-<!-- Auto Sync Panel Component -->
-<div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 mt-4">
-    <div class="flex items-center justify-between mb-3">
-        <div>
-            <div class="text-sm font-semibold">Auto Sync</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">Automatically sync products at regular intervals</div>
+        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 mt-4">
+            <div class="flex items-center justify-between mb-3 border-b border-gray-100 dark:border-gray-900/30 pb-2">
+                <div>
+                    <div class="text-sm font-semibold">Server-Side Auto Sync Status</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Triggered automatically by the system background scheduler</div>
+                </div>
+                @if ($lastSyncInfo)
+                    <span class="text-xs px-2.5 py-1 rounded-full font-semibold {{ $lastSyncInfo['status'] === 'success' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }}">
+                        {{ $lastSyncInfo['status'] === 'success' ? '✓ Success' : '✗ Error' }}
+                    </span>
+                @else
+                    <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-gray-100 text-gray-600 dark:bg-gray-850 dark:text-gray-400">
+                        No run history yet
+                    </span>
+                @endif
+            </div>
+
+            @if ($lastSyncInfo)
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-3">
+                    <div class="p-2 border border-gray-100 dark:border-gray-900 rounded-lg text-center bg-gray-50/50 dark:bg-gray-900/20">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Total SKUs</div>
+                        <div class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ $lastSyncInfo['total'] ?? 0 }}</div>
+                    </div>
+                    <div class="p-2 border border-gray-100 dark:border-gray-900 rounded-lg text-center bg-gray-50/50 dark:bg-gray-900/20">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Created</div>
+                        <div class="text-sm font-bold text-green-600 dark:text-green-500">{{ $lastSyncInfo['created'] ?? 0 }}</div>
+                    </div>
+                    <div class="p-2 border border-gray-100 dark:border-gray-900 rounded-lg text-center bg-gray-50/50 dark:bg-gray-900/20">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Updated</div>
+                        <div class="text-sm font-bold text-blue-600 dark:text-blue-500">{{ $lastSyncInfo['updated'] ?? 0 }}</div>
+                    </div>
+                    <div class="p-2 border border-gray-100 dark:border-gray-900 rounded-lg text-center bg-gray-50/50 dark:bg-gray-900/20">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Disabled</div>
+                        <div class="text-sm font-bold text-amber-600 dark:text-amber-500">{{ $lastSyncInfo['disabled'] ?? 0 }}</div>
+                    </div>
+                </div>
+
+                <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    🕒 <strong>Last background sync:</strong> 
+                    <span>
+                        {{ isset($lastSyncInfo['timestamp']) ? \Carbon\Carbon::parse($lastSyncInfo['timestamp'])->timezone(date_default_timezone_get())->format('Y-m-d H:i:s') : 'N/A' }}
+                    </span>
+                </div>
+
+                @if (!empty($lastSyncInfo['message']))
+                    <div class="mt-2 text-xs text-red-500 dark:text-red-400 border border-red-100 dark:border-red-950/30 bg-red-50/30 dark:bg-red-950/10 p-2 rounded-lg">
+                        <strong>Log details:</strong> {{ $lastSyncInfo['message'] }}
+                    </div>
+                @endif
+
+                @if (!empty($lastSyncInfo['errors']))
+                    <div class="mt-3">
+                        <div class="text-xs font-semibold text-red-600 dark:text-red-400 mb-1">Errors logged:</div>
+                        <div class="max-h-[120px] overflow-y-auto text-[11px] font-mono border border-red-200/50 dark:border-red-950/50 bg-red-50/20 dark:bg-red-950/5 p-2 rounded-lg text-red-600 dark:text-red-400">
+                            @foreach ($lastSyncInfo['errors'] as $err)
+                                <div>✗ {{ $err }}</div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            @else
+                <div class="text-xs text-gray-400 dark:text-gray-500 text-center py-3">
+                    Sync status will update once the server-side cron or queue completes its first task execution.
+                </div>
+            @endif
         </div>
-    </div>
-
-    <div id="auto-sync-settings">
-        <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Sync Every</div>
-        <select id="auto-sync-interval" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-sm">
-            <!-- Simplified Intervals -->
-            <option value="test-1">1 Minute (Testing)</option>
-            <option value="1">Every 1 hour</option>
-            <option value="3">Every 3 hours</option>
-            <option value="6" selected>Every 6 hours</option>
-            <option value="12">Every 12 hours</option>
-            <option value="24">Every 24 hours (Daily)</option>
-        </select>
-        
-        <button type="button" 
-                id="save-auto-sync-btn" 
-                onclick="executeAutoSyncSave()"
-                class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors text-sm">
-            Save Auto Sync Settings
-        </button>
-    </div>
-    
-    <!-- Visual Status & Timestamp Fields -->
-    <div id="auto-sync-status" class="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center"></div>
-    <div id="last-sync-timestamp" class="mt-1 text-xs text-gray-400 dark:text-gray-500 text-center font-medium"></div>
-    <div id="sync-countdown" class="mt-1 text-xs text-blue-500 text-center font-mono"></div>
-</div>
-
-<script>
-    let activeSyncTimer = null;
-
-    // 1. THE AUTOMATED TRIGGER ENGINE
-    function triggerProductSync() {
-        const realSyncBtn = document.getElementById('erp-sync-btn');
-        const timestampEl = document.getElementById('last-sync-timestamp');
-        
-        if (!realSyncBtn) {
-            console.error("❌ [Auto Sync Engine] Could not locate your manual sync target button: #erp-sync-btn");
-            return;
-        }
-
-        console.log("🔄 [Auto Sync Engine] Timer expired! Unlocking and executing real sync pipeline...");
-
-        // Remove the framework block attribute so the browser permits clicks
-        realSyncBtn.disabled = false;
-        
-        // Simulate an authentic programmatic mouse click to wake up your system's real scripts
-        realSyncBtn.click();
-
-        // Capture and display the timestamp immediately
-        if (timestampEl) {
-            const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            timestampEl.innerHTML = `🕒 Last auto-sync: <span class="text-gray-700 dark:text-gray-300 font-semibold">${currentTime}</span>`;
-            
-            // Save last execution timestamp to storage so it survives page reloads
-            localStorage.setItem('erp_last_sync_time', currentTime);
-        }
-    }
-
-    // 2. TIMING MONITOR LOOP
-    function startBackgroundEngine() {
-        if (activeSyncTimer) clearInterval(activeSyncTimer);
-
-        const saved = localStorage.getItem('erp_auto_sync');
-        if (!saved) return;
-
-        try {
-            const data = JSON.parse(saved);
-            if (!data.enabled || !data.interval_minutes) return;
-
-            const intervalMs = data.interval_minutes * 60 * 1000;
-            let timeRemainingMs = intervalMs;
-
-            const countdownEl = document.getElementById('sync-countdown');
-
-            activeSyncTimer = setInterval(() => {
-                timeRemainingMs -= 1000;
-
-                if (countdownEl) {
-                    const totalSeconds = Math.max(0, Math.floor(timeRemainingMs / 1000));
-                    const mins = Math.floor(totalSeconds / 60);
-                    const secs = totalSeconds % 60;
-                    countdownEl.innerText = `Next automatic sync in: ${mins}m ${secs}s`;
-                }
-
-                if (timeRemainingMs <= 0) {
-                    triggerProductSync();
-                    timeRemainingMs = intervalMs; // Reset and loop again
-                }
-            }, 1000);
-
-        } catch (e) {
-            console.error("Engine failed to loop properly:", e);
-        }
-    }
-
-    // 3. PERSIST DESIGN CONFIGURATIONS
-    function executeAutoSyncSave() {
-        const intervalSelect = document.getElementById('auto-sync-interval');
-        const statusEl = document.getElementById('auto-sync-status');
-
-        if (!intervalSelect) return;
-
-        const selectedValue = intervalSelect.value;
-        let minutes = 360;
-        let labelText = "";
-
-        if (selectedValue === 'test-1') {
-            minutes = 1;
-            labelText = `1 minute (Testing Mode)`;
-        } else {
-            const hours = parseInt(selectedValue) || 6;
-            minutes = hours * 60;
-            labelText = `${hours} hour${hours > 1 ? 's' : ''}`;
-        }
-
-        const payload = {
-            enabled: true,
-            interval_minutes: minutes,
-            raw_value: selectedValue,
-            updated_at: new Date().toISOString()
-        };
-
-        localStorage.setItem('erp_auto_sync', JSON.stringify(payload));
-
-        if (statusEl) {
-            statusEl.innerHTML = `✅ Auto Sync linked: active every ${labelText}`;
-            statusEl.style.color = '#16a34a';
-        }
-
-        startBackgroundEngine();
-        alert(`✅ Auto Sync Saved & Linked!\n\nWill trigger your 'Sync Products Now' button script every ${labelText}.`);
-    }
-
-    // 4. WORKSPACE AUTOMATION ON STARTUP
-    (function initOnLoad() {
-        const saved = localStorage.getItem('erp_auto_sync');
-        const lastSyncTime = localStorage.getItem('erp_last_sync_time');
-        const timestampEl = document.getElementById('last-sync-timestamp');
-
-        // Restore saved interval selection dropdown state
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                const intervalSelect = document.getElementById('auto-sync-interval');
-                if (intervalSelect && data.raw_value) {
-                    intervalSelect.value = data.raw_value;
-                }
-            } catch(e) {}
-        }
-
-        // Restore previous execution timestamp value on page reload
-        if (lastSyncTime && timestampEl) {
-            timestampEl.innerHTML = `🕒 Last auto-sync: <span class="text-gray-700 dark:text-gray-300 font-semibold">${lastSyncTime}</span>`;
-        }
-        
-        startBackgroundEngine();
-    })();
-</script>
 
 
 

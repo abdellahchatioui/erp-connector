@@ -50,6 +50,24 @@ class ErpConnectorServiceProvider extends ServiceProvider
             }
         }
 
+        if ($this->app->runningInConsole()) {
+            $this->app->booted(function () {
+                $schedule = $this->app->make(\Illuminate\Console\Scheduling\Schedule::class);
+                
+                $enabled = core()->getConfigData('erp.settings.general.auto_sync_enabled');
+                $interval = core()->getConfigData('erp.settings.general.auto_sync_interval') ?: 6;
+                
+                if ($enabled) {
+                    if ($interval === 'test-1') {
+                        $schedule->job(new \Webkul\ErpConnector\Jobs\SyncAllProductsJob)->everyMinute();
+                    } elseif ($interval === 'test-2') {
+                        $schedule->job(new \Webkul\ErpConnector\Jobs\SyncAllProductsJob)->everyTwoMinutes();
+                    } else {
+                        $schedule->job(new \Webkul\ErpConnector\Jobs\SyncAllProductsJob)->cron("0 */{$interval} * * *");
+                    }
+                }
+            });
+        }
     }
 
     /**
