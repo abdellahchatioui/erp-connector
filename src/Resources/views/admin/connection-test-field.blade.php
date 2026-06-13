@@ -102,176 +102,79 @@
                     <div id="sp-failed" class="text-2xl font-bold text-red-600 dark:text-red-400 tracking-tight">0</div>
                 </div>
             </div>
+            <div id="erp-auto-sync-live-panel" class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 mt-4">
+                <div class="flex items-center justify-between gap-3 flex-wrap mb-4 border-b border-gray-100 dark:border-gray-900/30 pb-3">
+                    <div>
+                        <div class="text-sm font-semibold">Auto Sync Status</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Live scheduler status and latest automatic report</div>
+                    </div>
+                    <span id="erp-auto-sync-status-badge" class="text-xs px-2.5 py-1 rounded-full font-semibold bg-gray-100 text-gray-600 dark:bg-gray-850 dark:text-gray-400">
+                        Loading
+                    </span>
+                </div>
 
-         <!-- Auto Sync Panel -->
-<!-- Auto Sync Panel Component -->
-<div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 mt-4">
-    <div class="flex items-center justify-between mb-3">
-        <div>
-            <div class="text-sm font-semibold">Auto Sync</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">Automatically sync products at regular intervals</div>
-        </div>
-    </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <div class="p-3 border border-gray-100 dark:border-gray-900 rounded-lg bg-gray-50/50 dark:bg-gray-900/20">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Auto Sync</div>
+                        <div id="erp-auto-enabled" class="text-sm font-bold text-gray-800 dark:text-gray-200">Loading</div>
+                    </div>
+                    <div class="p-3 border border-gray-100 dark:border-gray-900 rounded-lg bg-gray-50/50 dark:bg-gray-900/20">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Selected Interval</div>
+                        <div id="erp-auto-interval" class="text-sm font-bold text-gray-800 dark:text-gray-200">Loading</div>
+                    </div>
+                    <div class="p-3 border border-gray-100 dark:border-gray-900 rounded-lg bg-gray-50/50 dark:bg-gray-900/20">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Last Sync Time</div>
+                        <div id="erp-auto-last-sync" class="text-sm font-bold text-gray-800 dark:text-gray-200">Never</div>
+                    </div>
+                    <div class="p-3 border border-gray-100 dark:border-gray-900 rounded-lg bg-gray-50/50 dark:bg-gray-900/20">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Next Sync Time</div>
+                        <div id="erp-auto-next-sync" class="text-sm font-bold text-gray-800 dark:text-gray-200">Unknown</div>
+                    </div>
+                    <div class="p-3 border border-gray-100 dark:border-gray-900 rounded-lg bg-gray-50/50 dark:bg-gray-900/20">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Countdown</div>
+                        <div id="erp-auto-countdown" class="text-sm font-bold text-blue-600 dark:text-blue-400">--:--</div>
+                    </div>
+                </div>
 
-    <div id="auto-sync-settings">
-        <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Sync Every</div>
-        <select id="auto-sync-interval" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-sm">
-            <!-- Simplified Intervals -->
-            <option value="test-1">1 Minute (Testing)</option>
-            <option value="1">Every 1 hour</option>
-            <option value="3">Every 3 hours</option>
-            <option value="6" selected>Every 6 hours</option>
-            <option value="12">Every 12 hours</option>
-            <option value="24">Every 24 hours (Daily)</option>
-        </select>
-        
-        <button type="button" 
-                id="save-auto-sync-btn" 
-                onclick="executeAutoSyncSave()"
-                class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors text-sm">
-            Save Auto Sync Settings
-        </button>
-    </div>
-    
-    <!-- Visual Status & Timestamp Fields -->
-    <div id="auto-sync-status" class="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center"></div>
-    <div id="last-sync-timestamp" class="mt-1 text-xs text-gray-400 dark:text-gray-500 text-center font-medium"></div>
-    <div id="sync-countdown" class="mt-1 text-xs text-blue-500 text-center font-mono"></div>
-</div>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4">
+                    <div class="p-3 rounded-lg border border-gray-100 dark:border-gray-900 bg-gray-50/50 dark:bg-gray-900/20 text-center">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Total</div>
+                        <div id="erp-auto-total" class="text-lg font-bold text-gray-800 dark:text-gray-200">0</div>
+                    </div>
+                    <div class="p-3 rounded-lg border border-gray-100 dark:border-gray-900 bg-gray-50/50 dark:bg-gray-900/20 text-center">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Created</div>
+                        <div id="erp-auto-created" class="text-lg font-bold text-green-600 dark:text-green-500">0</div>
+                    </div>
+                    <div class="p-3 rounded-lg border border-gray-100 dark:border-gray-900 bg-gray-50/50 dark:bg-gray-900/20 text-center">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Updated</div>
+                        <div id="erp-auto-updated" class="text-lg font-bold text-blue-600 dark:text-blue-500">0</div>
+                    </div>
+                    <div class="p-3 rounded-lg border border-gray-100 dark:border-gray-900 bg-gray-50/50 dark:bg-gray-900/20 text-center">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Disabled</div>
+                        <div id="erp-auto-disabled" class="text-lg font-bold text-amber-600 dark:text-amber-500">0</div>
+                    </div>
+                    <div class="p-3 rounded-lg border border-gray-100 dark:border-gray-900 bg-gray-50/50 dark:bg-gray-900/20 text-center">
+                        <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Failed</div>
+                        <div id="erp-auto-failed" class="text-lg font-bold text-red-600 dark:text-red-500">0</div>
+                    </div>
+                </div>
 
-<script>
-    let activeSyncTimer = null;
+                <div id="erp-auto-message" class="mt-3 text-xs text-gray-500 dark:text-gray-400 hidden"></div>
+                <div id="erp-auto-errors" class="mt-3 max-h-[120px] overflow-y-auto text-[11px] font-mono border border-red-200/50 dark:border-red-950/50 bg-red-50/20 dark:bg-red-950/5 p-2 rounded-lg text-red-600 dark:text-red-400 hidden"></div>
+            </div>
+            <div class="mt-3 flex items-center justify-end gap-3">
+                <span id="erp-auto-save-status" class="text-sm font-semibold"></span>
+                <button type="button" id="erp-auto-save-btn"
+                        class="primary-button px-5 py-2.5 text-sm font-semibold rounded-lg transition-all">
+                    Save Auto Sync Settings
+                </button>
+            </div>
 
-    // 1. THE AUTOMATED TRIGGER ENGINE
-    function triggerProductSync() {
-        const realSyncBtn = document.getElementById('erp-sync-btn');
-        const timestampEl = document.getElementById('last-sync-timestamp');
-        
-        if (!realSyncBtn) {
-            console.error("❌ [Auto Sync Engine] Could not locate your manual sync target button: #erp-sync-btn");
-            return;
-        }
-
-        console.log("🔄 [Auto Sync Engine] Timer expired! Unlocking and executing real sync pipeline...");
-
-        // Remove the framework block attribute so the browser permits clicks
-        realSyncBtn.disabled = false;
-        
-        // Simulate an authentic programmatic mouse click to wake up your system's real scripts
-        realSyncBtn.click();
-
-        // Capture and display the timestamp immediately
-        if (timestampEl) {
-            const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            timestampEl.innerHTML = `🕒 Last auto-sync: <span class="text-gray-700 dark:text-gray-300 font-semibold">${currentTime}</span>`;
-            
-            // Save last execution timestamp to storage so it survives page reloads
-            localStorage.setItem('erp_last_sync_time', currentTime);
-        }
-    }
-
-    // 2. TIMING MONITOR LOOP
-    function startBackgroundEngine() {
-        if (activeSyncTimer) clearInterval(activeSyncTimer);
-
-        const saved = localStorage.getItem('erp_auto_sync');
-        if (!saved) return;
-
-        try {
-            const data = JSON.parse(saved);
-            if (!data.enabled || !data.interval_minutes) return;
-
-            const intervalMs = data.interval_minutes * 60 * 1000;
-            let timeRemainingMs = intervalMs;
-
-            const countdownEl = document.getElementById('sync-countdown');
-
-            activeSyncTimer = setInterval(() => {
-                timeRemainingMs -= 1000;
-
-                if (countdownEl) {
-                    const totalSeconds = Math.max(0, Math.floor(timeRemainingMs / 1000));
-                    const mins = Math.floor(totalSeconds / 60);
-                    const secs = totalSeconds % 60;
-                    countdownEl.innerText = `Next automatic sync in: ${mins}m ${secs}s`;
-                }
-
-                if (timeRemainingMs <= 0) {
-                    triggerProductSync();
-                    timeRemainingMs = intervalMs; // Reset and loop again
-                }
-            }, 1000);
-
-        } catch (e) {
-            console.error("Engine failed to loop properly:", e);
-        }
-    }
-
-    // 3. PERSIST DESIGN CONFIGURATIONS
-    function executeAutoSyncSave() {
-        const intervalSelect = document.getElementById('auto-sync-interval');
-        const statusEl = document.getElementById('auto-sync-status');
-
-        if (!intervalSelect) return;
-
-        const selectedValue = intervalSelect.value;
-        let minutes = 360;
-        let labelText = "";
-
-        if (selectedValue === 'test-1') {
-            minutes = 1;
-            labelText = `1 minute (Testing Mode)`;
-        } else {
-            const hours = parseInt(selectedValue) || 6;
-            minutes = hours * 60;
-            labelText = `${hours} hour${hours > 1 ? 's' : ''}`;
-        }
-
-        const payload = {
-            enabled: true,
-            interval_minutes: minutes,
-            raw_value: selectedValue,
-            updated_at: new Date().toISOString()
-        };
-
-        localStorage.setItem('erp_auto_sync', JSON.stringify(payload));
-
-        if (statusEl) {
-            statusEl.innerHTML = `✅ Auto Sync linked: active every ${labelText}`;
-            statusEl.style.color = '#16a34a';
-        }
-
-        startBackgroundEngine();
-        alert(`✅ Auto Sync Saved & Linked!\n\nWill trigger your 'Sync Products Now' button script every ${labelText}.`);
-    }
-
-    // 4. WORKSPACE AUTOMATION ON STARTUP
-    (function initOnLoad() {
-        const saved = localStorage.getItem('erp_auto_sync');
-        const lastSyncTime = localStorage.getItem('erp_last_sync_time');
-        const timestampEl = document.getElementById('last-sync-timestamp');
-
-        // Restore saved interval selection dropdown state
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                const intervalSelect = document.getElementById('auto-sync-interval');
-                if (intervalSelect && data.raw_value) {
-                    intervalSelect.value = data.raw_value;
-                }
-            } catch(e) {}
-        }
-
-        // Restore previous execution timestamp value on page reload
-        if (lastSyncTime && timestampEl) {
-            timestampEl.innerHTML = `🕒 Last auto-sync: <span class="text-gray-700 dark:text-gray-300 font-semibold">${lastSyncTime}</span>`;
-        }
-        
-        startBackgroundEngine();
-    })();
-</script>
-
-
+                 <!-- Auto Sync Background Job Logs -->
+        @php
+            $lastSyncJson = core()->getConfigData('erp.settings.general.last_sync_info');
+            $lastSyncInfo = $lastSyncJson ? json_decode($lastSyncJson, true) : null;
+        @endphp
 
 
             <div id="erp-sync-errors" class="mt-4 max-h-[160px] overflow-y-auto rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/10 p-3 hidden"></div>
@@ -321,6 +224,221 @@
     if (localStorage.getItem('erp_connection_success') === 'true') {
         updateSyncPanelState(true);
     }
+
+    let nextAutoSyncAt = null;
+    let lastAutoSyncTargetKey = null;
+
+    function formatDateTime(value) {
+        if (!value) return 'Never';
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) return 'Never';
+
+        return date.toLocaleString();
+    }
+
+    function setText(id, value) {
+        const el = $(id);
+        if (el) el.textContent = value;
+    }
+
+    function setAutoStatusBadge(status) {
+        const badge = $('erp-auto-sync-status-badge');
+        if (!badge) return;
+
+        const normalized = status || 'idle';
+        const labels = {
+            running: 'Running',
+            success: 'Success',
+            error: 'Error',
+            idle: 'Idle',
+        };
+
+        badge.textContent = labels[normalized] || normalized;
+
+        const classes = {
+            running: 'text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+            success: 'text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+            error: 'text-xs px-2.5 py-1 rounded-full font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+            idle: 'text-xs px-2.5 py-1 rounded-full font-semibold bg-gray-100 text-gray-600 dark:bg-gray-850 dark:text-gray-400',
+        };
+
+        badge.className = classes[normalized] || classes.idle;
+    }
+
+    function estimateNextSyncAt(interval) {
+        const date = new Date();
+
+        switch (String(interval || '6')) {
+            case 'test-1':
+                date.setMinutes(date.getMinutes() + 1);
+                break;
+
+            case 'test-2':
+                date.setMinutes(date.getMinutes() + 2);
+                break;
+
+            case '1':
+                date.setHours(date.getHours() + 1);
+                break;
+
+            case '3':
+                date.setHours(date.getHours() + 3);
+                break;
+
+            case '12':
+                date.setHours(date.getHours() + 12);
+                break;
+
+            case '24':
+                date.setDate(date.getDate() + 1);
+                break;
+
+            case '6':
+            default:
+                date.setHours(date.getHours() + 6);
+                break;
+        }
+
+        return date;
+    }
+
+    function updateAutoCountdown() {
+        const countdown = $('erp-auto-countdown');
+        if (!countdown) return;
+
+        if (!nextAutoSyncAt) {
+            countdown.textContent = '--:--';
+            return;
+        }
+
+        const diff = nextAutoSyncAt.getTime() - Date.now();
+
+        if (diff <= 0) {
+            countdown.textContent = 'Due now';
+            return;
+        }
+
+        const totalSeconds = Math.floor(diff / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        countdown.textContent = hours > 0
+            ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+            : `${minutes}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function updateAutoErrors(errors) {
+        const errorsEl = $('erp-auto-errors');
+        if (!errorsEl) return;
+
+        errorsEl.innerHTML = '';
+
+        if (!Array.isArray(errors) || errors.length === 0) {
+            errorsEl.classList.add('hidden');
+            return;
+        }
+
+        errors.forEach(error => {
+            const row = document.createElement('div');
+            row.textContent = typeof error === 'string'
+                ? error
+                : `${error.sku || 'SKU'}: ${error.error || error.message || 'Unknown error'}`;
+            errorsEl.appendChild(row);
+        });
+
+        errorsEl.classList.remove('hidden');
+    }
+
+    function updateAutoSyncPanel(data) {
+        setAutoStatusBadge(data.status);
+        setText('erp-auto-enabled', data.auto_sync_enabled ? 'Enabled' : 'Disabled');
+        setText('erp-auto-interval', data.interval_label || data.interval || 'Not selected');
+        setText('erp-auto-last-sync', formatDateTime(data.last_sync_at || data.finished_at || data.timestamp));
+        setText('erp-auto-total', data.total || 0);
+        setText('erp-auto-created', data.created || 0);
+        setText('erp-auto-updated', data.updated || 0);
+        setText('erp-auto-disabled', data.disabled || 0);
+        setText('erp-auto-failed', data.failed || 0);
+
+        if (!data.auto_sync_enabled) {
+            nextAutoSyncAt = null;
+            lastAutoSyncTargetKey = null;
+            setText('erp-auto-next-sync', 'Disabled');
+        } else if (data.next_sync_at) {
+            const targetKey = `${data.next_sync_at}|${data.status || ''}|${data.finished_at || ''}|${data.last_sync_at || ''}`;
+
+            if (targetKey !== lastAutoSyncTargetKey) {
+                nextAutoSyncAt = new Date(data.next_sync_at);
+                lastAutoSyncTargetKey = targetKey;
+            }
+
+            setText('erp-auto-next-sync', formatDateTime(nextAutoSyncAt));
+        } else {
+            const targetKey = `local-estimate|${data.interval || '6'}`;
+
+            if (!nextAutoSyncAt || targetKey !== lastAutoSyncTargetKey) {
+                nextAutoSyncAt = estimateNextSyncAt(data.interval);
+                lastAutoSyncTargetKey = targetKey;
+            }
+
+            setText('erp-auto-next-sync', formatDateTime(nextAutoSyncAt));
+        }
+
+        const messageEl = $('erp-auto-message');
+        if (messageEl) {
+            if (data.message) {
+                messageEl.textContent = data.message;
+                messageEl.classList.remove('hidden');
+            } else {
+                messageEl.textContent = '';
+                messageEl.classList.add('hidden');
+            }
+        }
+
+        updateAutoErrors(data.errors || []);
+        updateAutoCountdown();
+    }
+
+    function getAutoSyncEnabledValue() {
+        const checkbox = document.querySelector('input[type="checkbox"][name*="auto_sync_enabled"]');
+
+        if (checkbox) {
+            return checkbox.checked ? 1 : 0;
+        }
+
+        const input = document.querySelector('input[name*="auto_sync_enabled"]');
+
+        return input && ['1', 'true', 'on'].includes(String(input.value).toLowerCase()) ? 1 : 0;
+    }
+
+    function getAutoSyncIntervalValue() {
+        const select = document.querySelector('select[name*="auto_sync_interval"]');
+        const input = select || document.querySelector('input[name*="auto_sync_interval"]');
+
+        return input ? input.value : '6';
+    }
+
+    async function refreshAutoSyncStatus() {
+        try {
+            const response = await fetch('{{ route("admin.erp.sync.status") }}', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' },
+            });
+
+            if (!response.ok) return;
+
+            updateAutoSyncPanel(await response.json());
+        } catch (error) {
+            setAutoStatusBadge('error');
+        }
+    }
+
+    refreshAutoSyncStatus();
+    setInterval(refreshAutoSyncStatus, 10000);
+    setInterval(updateAutoCountdown, 1000);
 
     // Connection Panel
     (function setupConnectionPanel() {
@@ -387,6 +505,59 @@
             const submitBtn = document.querySelector("form button[type='submit']") || document.querySelector(".primary-button[type='submit']");
             if (submitBtn) submitBtn.click();
             else document.querySelector("form")?.submit();
+        }
+    });
+
+    document.addEventListener('click', async function (event) {
+        const saveBtn = event.target.closest('#erp-auto-save-btn');
+        if (!saveBtn) return;
+
+        event.preventDefault();
+
+        const status = $('erp-auto-save-status');
+        const originalText = saveBtn.textContent;
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        if (status) {
+            status.textContent = 'Saving auto sync settings...';
+            status.style.color = '#4b5563';
+        }
+
+        try {
+            const response = await fetch(`{{ route("admin.erp.sync.auto-settings.save") }}${window.location.search || ''}`, {
+                method: 'POST',
+                headers: jsonHeaders(),
+                body: JSON.stringify({
+                    auto_sync_enabled: getAutoSyncEnabledValue(),
+                    auto_sync_interval: getAutoSyncIntervalValue(),
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Unable to save auto sync settings.');
+            }
+
+            nextAutoSyncAt = null;
+            lastAutoSyncTargetKey = null;
+
+            if (status) {
+                status.textContent = data.message || 'Auto sync settings saved.';
+                status.style.color = '#16a34a';
+            }
+
+            await refreshAutoSyncStatus();
+        } catch (error) {
+            if (status) {
+                status.textContent = error.message;
+                status.style.color = '#dc2626';
+            }
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = originalText;
         }
     });
 

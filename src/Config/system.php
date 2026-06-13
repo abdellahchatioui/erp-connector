@@ -1,5 +1,4 @@
 <?php
-
 return [
     [
         'key'   => 'erp',
@@ -66,14 +65,34 @@ return [
                 'validation'    => 'required',
                 'channel_based' => true,
                 'locale_based'  => false,
-            ],
+            ],   
             [
                 'name'          => 'connection_test_button',
                 'title'         => '',
                 'type'          => 'blade',
                 'path'          => 'erp::admin.connection-test-field',
             ],
-            
+             [
+                'name'          => 'auto_sync_enabled',
+                'title'         => 'Enable Auto Sync',
+                'type'          => 'boolean',
+                'channel_based' => true,
+            ],
+            [
+                'name'          => 'auto_sync_interval',
+                'title'         => 'Sync Interval (Hours)',
+                'type'          => 'select',
+                'options'       => [
+                    ['title' => '1 Minute (Testing)', 'value' => 'test-1'],
+                    ['title' => '2 Minutes (Testing)', 'value' => 'test-2'],
+                    ['title' => 'Every Hour', 'value' => 1],
+                    ['title' => 'Every 3 Hours', 'value' => 3],
+                    ['title' => 'Every 6 Hours', 'value' => 6],
+                    ['title' => 'Every 12 Hours', 'value' => 12],
+                    ['title' => 'Daily (24 Hours)', 'value' => 24],
+                ],
+                'channel_based' => true,
+            ],
         ]
     ]
 ];
