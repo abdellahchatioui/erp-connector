@@ -15,6 +15,13 @@ return [
             'info' => 'Enter your ERP backend connection details.',
             'info_with_button' => 'Enter your ERP backend connection details below.',
             'auto-sync' => 'Auto Sync',
+            'auto-sync-status' => 'Auto Sync Status',
+            'selected-interval' => 'Selected Interval',
+            'last-sync-time' => 'Last Sync Time',
+            'next-sync-time' => 'Next Sync Time',
+            'countdown' => 'Countdown',
+            'running' => 'Running',
+            'idle' => 'Idle',
             'error-handling-mode' => 'Error Handling Mode',
             'log-and-continue' => 'Log & Continue',
             'abort-on-error' => 'Abort on Error',
@@ -30,6 +37,6 @@ return [
 
         'menu' => [
             'title' => 'ERP Integration',
-        ]
-    ]
+        ],
+    ],
 ];

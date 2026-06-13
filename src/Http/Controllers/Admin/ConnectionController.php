@@ -2,14 +2,16 @@
 
 namespace Webkul\ErpConnector\Http\Controllers\Admin;
 
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Contracts\Encryption\DecryptException;
 use Webkul\ErpConnector\Helpers\Config;
+use Webkul\ErpConnector\Services\KeycloakTokenService;
 use Webkul\Product\Repositories\ProductRepository;
 
 class ConnectionController extends Controller
@@ -26,7 +28,7 @@ class ConnectionController extends Controller
 
     public function __construct(Config $erpConfig, ProductRepository $productRepository)
     {
-        $this->erpConfig         = $erpConfig;
+        $this->erpConfig = $erpConfig;
         $this->productRepository = $productRepository;
     }
 
@@ -39,12 +41,12 @@ class ConnectionController extends Controller
      */
     public function test()
     {
-        $url   = request()->input('backend_url') ?: $this->erpConfig->getErpUrl();
-        $token = request()->input('erp_token')   ?: $this->erpConfig->getErpToken();
+        $url = request()->input('backend_url') ?: $this->erpConfig->getErpUrl();
+        $token = request()->input('erp_token') ?: $this->erpConfig->getErpToken();
 
         if (! $url || ! $token) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Configuration missing. Please set URL and Token in settings.',
             ]);
         }
@@ -58,8 +60,8 @@ class ConnectionController extends Controller
         $keycloakOverrides = [
             'token_url' => request()->input('keycloak_token_url') ?: $this->erpConfig->getKeycloakTokenUrl(),
             'client_id' => request()->input('keycloak_client_id') ?: $this->erpConfig->getKeycloakClientId(),
-            'username'  => request()->input('keycloak_username')  ?: $this->erpConfig->getKeycloakUsername(),
-            'password'  => request()->input('keycloak_password')  ?: $this->erpConfig->getKeycloakPassword(),
+            'username' => request()->input('keycloak_username') ?: $this->erpConfig->getKeycloakUsername(),
+            'password' => request()->input('keycloak_password') ?: $this->erpConfig->getKeycloakPassword(),
         ];
 
         if (! empty($keycloakOverrides['password'])) {
@@ -72,7 +74,7 @@ class ConnectionController extends Controller
 
         try {
             $url = rtrim($url, '/');
-            $jwt = app(\Webkul\ErpConnector\Services\KeycloakTokenService::class)->getToken($keycloakOverrides);
+            $jwt = app(KeycloakTokenService::class)->getToken($keycloakOverrides);
 
             $response = Http::withToken($jwt)
                 ->withHeaders(['X-ERP-TOKEN' => $token])
@@ -81,20 +83,21 @@ class ConnectionController extends Controller
 
             if ($response->successful()) {
                 return response()->json([
-                    'status'  => 'success',
+                    'status' => 'success',
                     'message' => trans('erp::app.admin.connection.success'),
                 ]);
             }
 
             $errorMsg = $response->body() ?: $response->reason();
+
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => trans('erp::app.admin.connection.failed', ['message' => $errorMsg]),
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => trans('erp::app.admin.connection.failed', ['message' => $e->getMessage()]),
             ]);
         }
@@ -125,20 +128,22 @@ class ConnectionController extends Controller
             if ($response->failed()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to fetch products from ERP: ' . $response->status(),
+                    'message' => 'Failed to fetch products from ERP: '.$response->status(),
                 ], 500);
             }
 
             $erpProducts = $response->json() ?? [];
 
-            $toSync    = [];
+            $toSync = [];
             $toDisable = [];
 
             foreach ($erpProducts as $product) {
-                $sku     = $product['sku'] ?? null;
+                $sku = $product['sku'] ?? null;
                 $publish = $product['publish'] ?? true; // default true for backward compat
 
-                if (! $sku) continue;
+                if (! $sku) {
+                    continue;
+                }
 
                 if ($publish) {
                     $toSync[] = $sku;
@@ -148,14 +153,15 @@ class ConnectionController extends Controller
             }
 
             return response()->json([
-                'success'   => true,
-                'to_sync'   => $toSync,
-                'to_disable'=> $toDisable,
-                'total'     => count($toSync),
+                'success' => true,
+                'to_sync' => $toSync,
+                'to_disable' => $toDisable,
+                'total' => count($toSync),
             ]);
 
         } catch (\Exception $e) {
-            Log::error('ERP syncInit error: ' . $e->getMessage());
+            Log::error('ERP syncInit error: '.$e->getMessage());
+
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -187,35 +193,35 @@ class ConnectionController extends Controller
             if ($response->failed()) {
                 return response()->json([
                     'success' => false,
-                    'status'  => 'failed',
-                    'sku'     => $sku,
-                    'message' => 'ERP returned ' . $response->status(),
+                    'status' => 'failed',
+                    'sku' => $sku,
+                    'message' => 'ERP returned '.$response->status(),
                 ]);
             }
 
             $erpProduct = $response->json();
             $categoryId = $this->ensureErpCategory();
-            $isNew      = false;
+            $isNew = false;
 
             $existing = $this->productRepository->findOneWhere(['sku' => $sku]);
 
             $mappedData = [
-                'channel'              => 'default',
-                'locale'               => 'en',
-                'name'                 => $erpProduct['name']             ?? 'Unknown Product',
-                'price'                => $erpProduct['price']            ?? 0.00,
-                'weight'               => $erpProduct['weight']           ?? 1.0,
-                'status'               => 1, // publish=true → enabled
+                'channel' => 'default',
+                'locale' => 'en',
+                'name' => $erpProduct['name'] ?? 'Unknown Product',
+                'price' => $erpProduct['price'] ?? 0.00,
+                'weight' => $erpProduct['weight'] ?? 1.0,
+                'status' => 1, // publish=true → enabled
                 'visible_individually' => 1,
-                'guest_checkout'       => 1,
-                'featured'             => 1,
-                'new'                  => 1,
-                'short_description'    => $erpProduct['description']      ?? '',
-                'description'          => $erpProduct['description']      ?? '',
-                'url_key'              => strtolower(str_replace(' ', '-', $erpProduct['name'] ?? $sku)),
-                'inventories'          => [1 => $erpProduct['quantity']   ?? 1],
-                'channels'             => [1],
-                'categories'           => [1, $categoryId],
+                'guest_checkout' => 1,
+                'featured' => 1,
+                'new' => 1,
+                'short_description' => $erpProduct['description'] ?? '',
+                'description' => $erpProduct['description'] ?? '',
+                'url_key' => strtolower(str_replace(' ', '-', $erpProduct['name'] ?? $sku)),
+                'inventories' => [1 => $erpProduct['quantity'] ?? 1],
+                'channels' => [1],
+                'categories' => [1, $categoryId],
             ];
 
             if ($existing) {
@@ -223,29 +229,30 @@ class ConnectionController extends Controller
                 Event::dispatch('catalog.product.update.after', $product);
                 $status = 'updated';
             } else {
-                $isNew   = true;
-                $base    = ['sku' => $sku, 'type' => 'simple', 'attribute_family_id' => 1];
+                $isNew = true;
+                $base = ['sku' => $sku, 'type' => 'simple', 'attribute_family_id' => 1];
                 $product = $this->productRepository->create($base);
                 Event::dispatch('catalog.product.create.after', $product);
                 $updated = $this->productRepository->update($mappedData, $product->id);
                 Event::dispatch('catalog.product.update.after', $updated);
-                $status  = 'created';
+                $status = 'created';
             }
 
             Log::info("ERP Sync [{$status}]: {$sku}");
 
             return response()->json([
                 'success' => true,
-                'status'  => $status,
-                'sku'     => $sku,
+                'status' => $status,
+                'sku' => $sku,
             ]);
 
         } catch (\Exception $e) {
-            Log::error("ERP syncSku error [{$sku}]: " . $e->getMessage());
+            Log::error("ERP syncSku error [{$sku}]: ".$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'status'  => 'failed',
-                'sku'     => $sku,
+                'status' => 'failed',
+                'sku' => $sku,
                 'message' => $e->getMessage(),
             ]);
         }
@@ -263,10 +270,10 @@ class ConnectionController extends Controller
     public function syncFinalize()
     {
         $processedSkus = request()->input('processed_skus', []);
-        $toDisable     = request()->input('to_disable', []);
+        $toDisable = request()->input('to_disable', []);
 
         $disabledCount = 0;
-        $errors        = [];
+        $errors = [];
 
         try {
             $categoryId = $this->getErpCategoryId();
@@ -304,16 +311,17 @@ class ConnectionController extends Controller
                 }
             }
 
-            Log::info("ERP Sync Finalized. Disabled: {$disabledCount}. Errors: " . count($errors));
+            Log::info("ERP Sync Finalized. Disabled: {$disabledCount}. Errors: ".count($errors));
 
             return response()->json([
-                'success'       => true,
-                'disabled_count'=> $disabledCount,
-                'errors'        => $errors,
+                'success' => true,
+                'disabled_count' => $disabledCount,
+                'errors' => $errors,
             ]);
 
         } catch (\Exception $e) {
-            Log::error('ERP syncFinalize error: ' . $e->getMessage());
+            Log::error('ERP syncFinalize error: '.$e->getMessage());
+
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -323,20 +331,125 @@ class ConnectionController extends Controller
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
+     * Return the latest automatic sync status for the admin UI.
+     */
+    public function syncStatus()
+    {
+        $lastSyncJson = core()->getConfigData('erp.settings.general.last_sync_info');
+        $lastSyncInfo = $lastSyncJson ? json_decode($lastSyncJson, true) : [];
+
+        if (! is_array($lastSyncInfo)) {
+            $lastSyncInfo = [];
+        }
+
+        return response()->json(array_merge([
+            'auto_sync_enabled' => $this->erpConfig->isAutoSyncEnabled(),
+            'interval' => $this->erpConfig->getAutoSyncInterval(),
+            'interval_label' => $this->erpConfig->getAutoSyncIntervalLabel(),
+            'status' => 'idle',
+            'source' => 'auto',
+            'timestamp' => null,
+            'started_at' => null,
+            'finished_at' => null,
+            'last_sync_at' => null,
+            'next_sync_at' => null,
+            'total' => 0,
+            'created' => 0,
+            'updated' => 0,
+            'disabled' => 0,
+            'failed' => 0,
+            'message' => '',
+            'errors' => [],
+        ], $lastSyncInfo, [
+            'auto_sync_enabled' => $this->erpConfig->isAutoSyncEnabled(),
+            'interval' => $this->erpConfig->getAutoSyncInterval(),
+            'interval_label' => $this->erpConfig->getAutoSyncIntervalLabel(),
+            'next_sync_at' => $lastSyncInfo['next_sync_at'] ?? null,
+        ]));
+    }
+
+    /**
+     * Save only the automatic sync settings.
+     */
+    public function saveAutoSyncSettings(Request $request)
+    {
+        $data = $request->validate([
+            'auto_sync_enabled' => ['nullable', 'boolean'],
+            'auto_sync_interval' => ['required', 'in:test-1,test-2,1,3,6,12,24'],
+        ]);
+
+        $channelCode = core()->getRequestedChannelCode();
+        $now = now();
+        $configRepository = app(\Webkul\Core\Repositories\CoreConfigRepository::class);
+
+        $configRepository->updateOrCreate(
+            [
+                'code'         => 'erp.settings.general.auto_sync_enabled',
+                'channel_code' => $channelCode,
+                'locale_code'  => null,
+            ],
+            ['value' => ! empty($data['auto_sync_enabled']) ? '1' : '0']
+        );
+
+        $configRepository->updateOrCreate(
+            [
+                'code'         => 'erp.settings.general.auto_sync_interval',
+                'channel_code' => $channelCode,
+                'locale_code'  => null,
+            ],
+            ['value' => $data['auto_sync_interval']]
+        );
+
+        // Instantly update last_sync_info in core_config so that UI countdown updates immediately
+        $lastSyncJson = core()->getConfigData('erp.settings.general.last_sync_info');
+        $lastSyncInfo = $lastSyncJson ? json_decode($lastSyncJson, true) : [];
+        if (! is_array($lastSyncInfo)) {
+            $lastSyncInfo = [];
+        }
+
+        $lastSyncInfo['auto_sync_enabled'] = ! empty($data['auto_sync_enabled']);
+        $lastSyncInfo['interval'] = $data['auto_sync_interval'];
+        
+        // Dynamically compute next expected sync time
+        if ($lastSyncInfo['auto_sync_enabled']) {
+            $lastSyncInfo['next_sync_at'] = $this->erpConfig->getNextSyncAt($now);
+        } else {
+            $lastSyncInfo['next_sync_at'] = null;
+        }
+
+        $configRepository->updateOrCreate(
+            [
+                'code'         => 'erp.settings.general.last_sync_info',
+                'channel_code' => null,
+                'locale_code'  => null,
+            ],
+            ['value' => json_encode($lastSyncInfo)]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Auto sync settings saved.',
+            'auto_sync_enabled' => ! empty($data['auto_sync_enabled']),
+            'interval' => $this->erpConfig->getAutoSyncInterval(),
+            'interval_label' => $this->erpConfig->getAutoSyncIntervalLabel(),
+        ]);
+    }
+
+    /**
      * Build a [url, token, jwt] tuple from core_config.
      *
      * @return array [string $url, string $token, string $jwt]
      */
     private function resolveErpCredentials(): array
     {
-        $url   = rtrim($this->erpConfig->getErpUrl(), '/');
+        $url = rtrim($this->erpConfig->getErpUrl(), '/');
         $token = $this->erpConfig->getErpToken();
 
         if (! $url || ! $token) {
             throw new \RuntimeException('ERP URL or Token not configured in admin settings.');
         }
 
-        $jwt = app(\Webkul\ErpConnector\Services\KeycloakTokenService::class)->getToken();
+        $jwt = app(KeycloakTokenService::class)->getToken();
 
         return [$url, $token, $jwt];
     }
@@ -354,31 +467,32 @@ class ConnectionController extends Controller
                     ->where('id', $translation->id)
                     ->update(['url_path' => 'erp-products']);
             }
+
             return $translation->category_id;
         }
 
-        $root       = DB::table('categories')->whereNull('parent_id')->first()
+        $root = DB::table('categories')->whereNull('parent_id')->first()
                    ?? DB::table('categories')->where('id', 1)->first();
-        $rootId     = $root ? $root->id : 1;
+        $rootId = $root ? $root->id : 1;
 
         $categoryId = DB::table('categories')->insertGetId([
-            'parent_id'  => $rootId,
-            'position'   => 2,
-            'status'     => 1,
-            '_lft'       => 84,
-            '_rgt'       => 85,
+            'parent_id' => $rootId,
+            'position' => 2,
+            'status' => 1,
+            '_lft' => 84,
+            '_rgt' => 85,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         DB::table('category_translations')->insert([
             'category_id' => $categoryId,
-            'locale'      => 'en',
-            'name'        => 'ERP Products',
-            'slug'        => 'erp-products',
-            'url_path'    => 'erp-products',
+            'locale' => 'en',
+            'name' => 'ERP Products',
+            'slug' => 'erp-products',
+            'url_path' => 'erp-products',
             'description' => 'Products synchronized from our ERP backend.',
-            'locale_id'   => 1,
+            'locale_id' => 1,
         ]);
 
         Log::info("Auto-created ERP Products Category with ID {$categoryId}.");
@@ -392,6 +506,7 @@ class ConnectionController extends Controller
     private function getErpCategoryId(): ?int
     {
         $translation = DB::table('category_translations')->where('slug', 'erp-products')->first();
+
         return $translation ? (int) $translation->category_id : null;
     }
 
@@ -408,8 +523,8 @@ class ConnectionController extends Controller
 
         $this->productRepository->update([
             'channel' => 'default',
-            'locale'  => 'en',
-            'status'  => 0,
+            'locale' => 'en',
+            'status' => 0,
         ], $product->id);
 
         Event::dispatch('catalog.product.update.after', $product);
