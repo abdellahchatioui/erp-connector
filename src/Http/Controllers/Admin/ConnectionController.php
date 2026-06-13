@@ -58,10 +58,11 @@ class ConnectionController extends Controller
         }
 
         $keycloakOverrides = [
-            'token_url' => request()->input('keycloak_token_url') ?: $this->erpConfig->getKeycloakTokenUrl(),
-            'client_id' => request()->input('keycloak_client_id') ?: $this->erpConfig->getKeycloakClientId(),
-            'username' => request()->input('keycloak_username') ?: $this->erpConfig->getKeycloakUsername(),
-            'password' => request()->input('keycloak_password') ?: $this->erpConfig->getKeycloakPassword(),
+            'token_url'     => request()->input('keycloak_token_url') ?: $this->erpConfig->getKeycloakTokenUrl(),
+            'client_id'     => request()->input('keycloak_client_id') ?: $this->erpConfig->getKeycloakClientId(),
+            'client_secret' => request()->input('keycloak_client_secret') ?: $this->erpConfig->getKeycloakClientSecret(),
+            'username'      => request()->input('keycloak_username') ?: $this->erpConfig->getKeycloakUsername(),
+            'password'      => request()->input('keycloak_password') ?: $this->erpConfig->getKeycloakPassword(),
         ];
 
         if (! empty($keycloakOverrides['password'])) {
@@ -69,6 +70,14 @@ class ConnectionController extends Controller
                 $keycloakOverrides['password'] = Crypt::decryptString($keycloakOverrides['password']);
             } catch (DecryptException $e) {
                 // raw password
+            }
+        }
+
+        if (! empty($keycloakOverrides['client_secret'])) {
+            try {
+                $keycloakOverrides['client_secret'] = Crypt::decryptString($keycloakOverrides['client_secret']);
+            } catch (DecryptException $e) {
+                // raw secret typed by user, not yet saved/encrypted
             }
         }
 

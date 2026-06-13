@@ -10,6 +10,7 @@ return [
             'erp-token' => 'ERP Token',
             'keycloak-token-url' => 'Keycloak Token URL',
             'keycloak-client-id' => 'Keycloak Client ID',
+            'keycloak-client-secret' => 'Keycloak Client Secret',
             'keycloak-username' => 'Keycloak Username',
             'keycloak-password' => 'Keycloak Password',
             'info' => 'Enter your ERP backend connection details.',

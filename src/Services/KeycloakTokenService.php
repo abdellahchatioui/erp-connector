@@ -29,36 +29,46 @@ class KeycloakTokenService
         return Cache::remember('keycloak_jwt', now()->addMinutes(4), function () {
             $erpConfig = app(\Webkul\ErpConnector\Helpers\Config::class);
             return $this->fetchToken([
-                'token_url' => $erpConfig->getKeycloakTokenUrl(),
-                'client_id' => $erpConfig->getKeycloakClientId(),
-                'username'  => $erpConfig->getKeycloakUsername(),
-                'password'  => $erpConfig->getKeycloakPassword(),
+                'token_url'     => $erpConfig->getKeycloakTokenUrl(),
+                'client_id'     => $erpConfig->getKeycloakClientId(),
+                'client_secret' => $erpConfig->getKeycloakClientSecret(),
+                'username'      => $erpConfig->getKeycloakUsername(),
+                'password'      => $erpConfig->getKeycloakPassword(),
             ]);
         });
     }
 
     private function fetchToken(array $config): string
     {
-        $tokenUrl = $config['token_url'] ?? null;
-        $clientId = $config['client_id'] ?? null;
-        $username = $config['username'] ?? null;
-        $password = $config['password'] ?? null;
+        $tokenUrl     = $config['token_url'] ?? null;
+        $clientId     = $config['client_id'] ?? null;
+        $clientSecret = $config['client_secret'] ?? null;
+        $username     = $config['username'] ?? null;
+        $password     = $config['password'] ?? null;
 
         if (!$tokenUrl || !$clientId || !$username || !$password) {
             throw new \Exception("Keycloak configuration is missing in the ERP Connector settings.");
         }
 
-        $response = $this->client->post($tokenUrl, [
-            'form_params' => [
-                'grant_type'    => 'password',
-                'client_id'     => $clientId,
-                'username'      => $username,
-                'password'      => $password,
-            ],
-                'timeout' => 5,
-            ]);
-            $body = json_decode((string) $response->getBody(), true);
-            return $body['access_token'];
+        $formParams = [
+            'grant_type' => 'password',
+            'client_id'  => $clientId,
+            'username'   => $username,
+            'password'   => $password,
+        ];
+
+        // Include client_secret only when configured (confidential clients)
+        if (!empty($clientSecret)) {
+            $formParams['client_secret'] = $clientSecret;
         }
+
+        $response = $this->client->post($tokenUrl, [
+            'form_params' => $formParams,
+            'timeout'     => 5,
+        ]);
+
+        $body = json_decode((string) $response->getBody(), true);
+        return $body['access_token'];
+    }
 }
 
