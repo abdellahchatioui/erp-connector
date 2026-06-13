@@ -5,7 +5,7 @@ return [
         'key'   => 'erp',
         'name'  => 'erp::app.admin.system.erp-connector',
         'info'  => 'erp::app.admin.system.info',
-        'sort'  => 10,
+        'sort'  => 1,
     ],
     [
         'key'   => 'erp.settings',
@@ -72,7 +72,8 @@ return [
                 'title'         => '',
                 'type'          => 'blade',
                 'path'          => 'erp::admin.connection-test-field',
-            ]
+            ],
+            
         ]
     ]
 ];
