@@ -10,9 +10,11 @@ Route::group(['middleware' => ['web', 'admin']], function () {
             Route::post('connection-test', [ConnectionController::class, 'test'])->name('admin.erp.connection.run');
 
             // Chunked product sync routes
-            Route::post('sync-products/init',     [ConnectionController::class, 'syncInit'])->name('admin.erp.sync.init');
-            Route::post('sync-products/sku',      [ConnectionController::class, 'syncSku'])->name('admin.erp.sync.sku');
+            Route::post('sync-products/init', [ConnectionController::class, 'syncInit'])->name('admin.erp.sync.init');
+            Route::post('sync-products/sku', [ConnectionController::class, 'syncSku'])->name('admin.erp.sync.sku');
             Route::post('sync-products/finalize', [ConnectionController::class, 'syncFinalize'])->name('admin.erp.sync.finalize');
+            Route::get('sync-products/status', [ConnectionController::class, 'syncStatus'])->name('admin.erp.sync.status');
+            Route::post('sync-products/auto-sync-settings', [ConnectionController::class, 'saveAutoSyncSettings'])->name('admin.erp.sync.auto-settings.save');
         });
     });
 });
