@@ -30,18 +30,30 @@ class ErpConnectorServiceProvider extends ServiceProvider
             $updated = false;
 
             if (isset($general['erp_token']) && !empty($general['erp_token'])) {
-                $general['erp_token'] = \Illuminate\Support\Facades\Crypt::encryptString($general['erp_token']);
-                $updated = true;
+                try {
+                    \Illuminate\Support\Facades\Crypt::decryptString($general['erp_token']);
+                } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+                    $general['erp_token'] = \Illuminate\Support\Facades\Crypt::encryptString($general['erp_token']);
+                    $updated = true;
+                }
             }
 
             if (isset($general['keycloak_password']) && !empty($general['keycloak_password'])) {
-                $general['keycloak_password'] = \Illuminate\Support\Facades\Crypt::encryptString($general['keycloak_password']);
-                $updated = true;
+                try {
+                    \Illuminate\Support\Facades\Crypt::decryptString($general['keycloak_password']);
+                } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+                    $general['keycloak_password'] = \Illuminate\Support\Facades\Crypt::encryptString($general['keycloak_password']);
+                    $updated = true;
+                }
             }
 
             if (isset($general['keycloak_client_secret']) && !empty($general['keycloak_client_secret'])) {
-                $general['keycloak_client_secret'] = \Illuminate\Support\Facades\Crypt::encryptString($general['keycloak_client_secret']);
-                $updated = true;
+                try {
+                    \Illuminate\Support\Facades\Crypt::decryptString($general['keycloak_client_secret']);
+                } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+                    $general['keycloak_client_secret'] = \Illuminate\Support\Facades\Crypt::encryptString($general['keycloak_client_secret']);
+                    $updated = true;
+                }
             }
 
             if ($updated) {
