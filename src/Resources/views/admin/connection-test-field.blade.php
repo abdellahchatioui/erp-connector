@@ -1,8 +1,29 @@
+<style>
+    .erp-collapse-header .chevron-icon {
+        transition: transform 0.2s ease-in-out;
+    }
+    .erp-collapse-header.collapsed .chevron-icon {
+        transform: rotate(-90deg);
+    }
+</style>
+
 {{-- =====================================================================
      Part 1 — Connection Test
      ===================================================================== --}}
-<div class="mb-4 last:!mb-0 mt-4">
-    <div class="p-5 rounded-xl border border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-800">
+<div class="mb-4 last:!mb-0 mt-4 rounded-xl border border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-800 overflow-hidden shadow-sm">
+    <!-- Header -->
+    <div id="erp-connection-header" class="erp-collapse-header flex items-center justify-between p-5 cursor-pointer select-none border-b border-gray-100 dark:border-gray-850 hover:bg-gray-100/30 dark:hover:bg-gray-800/10 transition-all duration-200">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">⚡</span>
+            <div>
+                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Connection Actions & Settings Import</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Test connection credentials, save settings, or import settings from a JSON file.</p>
+            </div>
+        </div>
+        <span class="chevron-icon transform transition-transform duration-200 text-gray-400 dark:text-gray-500 text-base">▼</span>
+    </div>
+    <!-- Content Body -->
+    <div id="erp-connection-body" class="p-5">
         <div class="flex items-center gap-3 flex-wrap mb-5">
             <button type="button" id="erp-custom-save-btn"
                     class="primary-button px-5 py-2.5 text-sm font-semibold rounded-lg transition-all">
@@ -45,17 +66,31 @@
 </div>
 
 {{-- Part 2 — Sync Panel --}}
-<div class="mb-4 last:!mb-0 mt-4">
-    <div id="erp-sync-panel" class="p-5 rounded-xl border border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-800">
+<div class="mb-4 last:!mb-0 mt-4 rounded-xl border border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-800 overflow-hidden shadow-sm">
+    <!-- Header -->
+    <div id="erp-sync-header" class="erp-collapse-header flex items-center justify-between p-5 cursor-pointer select-none border-b border-gray-100 dark:border-gray-850 hover:bg-gray-100/30 dark:hover:bg-gray-800/10 transition-all duration-200">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">🔄</span>
+            <div>
+                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Product Synchronization Engine</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Run manual synchronization or monitor background auto-sync status.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <span id="sync-lock-status" 
+                  class="text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 font-medium">
+                🔒 Locked
+            </span>
+            <span class="chevron-icon transform transition-transform duration-200 text-gray-400 dark:text-gray-500 text-base">▼</span>
+        </div>
+    </div>
+    <!-- Content Body -->
+    <div id="erp-sync-body" class="p-5">
         <div class="flex items-center justify-between gap-4 flex-wrap border-b border-gray-200 dark:border-gray-800 pb-4 mb-5">
             <div class="flex items-center gap-3">
                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
-                    Product Synchronization Engine
+                    Sync Engine Control
                 </label>
-                <span id="sync-lock-status" 
-                      class="text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 font-medium">
-                    🔒 Locked
-                </span>
             </div>
             <span id="erp-sync-badge" class="px-3 py-1 text-xs font-semibold rounded-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">Idle</span>
         </div>
@@ -206,24 +241,88 @@
     function updateSyncPanelState(success) {
         isConnected = success;
         const syncBtn = $('erp-sync-btn');
+        const autoSaveBtn = $('erp-auto-save-btn');
         const lockStatus = $('sync-lock-status');
 
+        const autoEnabledCheckbox = document.querySelector('input[type="checkbox"][name*="auto_sync_enabled"]') 
+                                  || document.querySelector('input[name*="auto_sync_enabled"]');
+        const autoIntervalSelect = document.querySelector('select[name*="auto_sync_interval"]') 
+                                 || document.querySelector('input[name*="auto_sync_interval"]');
+
         if (success) {
-            syncBtn.disabled = false;
-            lockStatus.innerHTML = '✅ Unlocked';
-            lockStatus.className = 'text-xs px-3 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 font-medium';
+            if (syncBtn) syncBtn.disabled = false;
+            if (autoSaveBtn) autoSaveBtn.disabled = false;
+            if (autoEnabledCheckbox) autoEnabledCheckbox.disabled = false;
+            if (autoIntervalSelect) autoIntervalSelect.disabled = false;
+
+            if (lockStatus) {
+                lockStatus.innerHTML = '✅ Unlocked';
+                lockStatus.className = 'text-xs px-3 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 font-medium';
+            }
             localStorage.setItem('erp_connection_success', 'true');
         } else {
-            syncBtn.disabled = true;
-            lockStatus.innerHTML = '🔒 Locked';
-            lockStatus.className = 'text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 font-medium';
+            if (syncBtn) syncBtn.disabled = true;
+            if (autoSaveBtn) autoSaveBtn.disabled = true;
+            if (autoEnabledCheckbox) autoEnabledCheckbox.disabled = true;
+            if (autoIntervalSelect) autoIntervalSelect.disabled = true;
+
+            if (lockStatus) {
+                lockStatus.innerHTML = '🔒 Locked';
+                lockStatus.className = 'text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 font-medium';
+            }
         }
     }
 
     // Load saved state
     if (localStorage.getItem('erp_connection_success') === 'true') {
         updateSyncPanelState(true);
+    } else {
+        updateSyncPanelState(false);
     }
+
+    // Collapsible Panels Setup
+    function initCollapsible(headerId, bodyId) {
+        const header = $(headerId);
+        const body = $(bodyId);
+        if (!header || !body) return;
+
+        const isCollapsed = localStorage.getItem(headerId + '_collapsed') === 'true';
+        if (isCollapsed) {
+            body.classList.add('hidden');
+            header.classList.add('collapsed');
+        }
+
+        header.addEventListener('click', function() {
+            const collapsed = body.classList.toggle('hidden');
+            header.classList.toggle('collapsed', collapsed);
+            localStorage.setItem(headerId + '_collapsed', collapsed ? 'true' : 'false');
+        });
+    }
+
+    initCollapsible('erp-connection-header', 'erp-connection-body');
+    initCollapsible('erp-sync-header', 'erp-sync-body');
+
+    // Smart Watchers: Lock the sync panel if any connection input is modified
+    const credentialInputs = [
+        'input[name*="backend_url"]',
+        'input[name*="erp_token"]',
+        'input[name*="keycloak_token_url"]',
+        'input[name*="keycloak_client_id"]',
+        'input[name*="keycloak_client_secret"]',
+        'input[name*="keycloak_username"]',
+        'input[name*="keycloak_password"]'
+    ];
+    credentialInputs.forEach(selector => {
+        const input = document.querySelector(selector);
+        if (input) {
+            input.addEventListener('input', () => {
+                if (isConnected) {
+                    updateSyncPanelState(false);
+                    localStorage.removeItem('erp_connection_success');
+                }
+            });
+        }
+    });
 
     let nextAutoSyncAt = null;
     let lastAutoSyncTargetKey = null;
