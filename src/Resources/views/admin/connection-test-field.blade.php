@@ -14,7 +14,6 @@
     <!-- Header -->
     <div id="erp-connection-header" class="erp-collapse-header flex items-center justify-between p-5 cursor-pointer select-none border-b border-gray-100 dark:border-gray-850 hover:bg-gray-100/30 dark:hover:bg-gray-800/10 transition-all duration-200">
         <div class="flex items-center gap-3">
-            <span class="text-2xl">⚡</span>
             <div>
                 <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Connection Actions & Settings Import</h3>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Test connection credentials, save settings, or import settings from a JSON file.</p>
@@ -70,7 +69,6 @@
     <!-- Header -->
     <div id="erp-sync-header" class="erp-collapse-header flex items-center justify-between p-5 cursor-pointer select-none border-b border-gray-100 dark:border-gray-850 hover:bg-gray-100/30 dark:hover:bg-gray-800/10 transition-all duration-200">
         <div class="flex items-center gap-3">
-            <span class="text-2xl">🔄</span>
             <div>
                 <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Product Synchronization Engine</h3>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Run manual synchronization or monitor background auto-sync status.</p>
@@ -280,27 +278,77 @@
         updateSyncPanelState(false);
     }
 
-    // Collapsible Panels Setup
+    // Collapsible Panels — deferred so Bagisto/Vue finishes DOM hydration first
     function initCollapsible(headerId, bodyId) {
-        const header = $(headerId);
-        const body = $(bodyId);
+        const header = document.getElementById(headerId);
+        const body   = document.getElementById(bodyId);
         if (!header || !body) return;
 
-        const isCollapsed = localStorage.getItem(headerId + '_collapsed') === 'true';
+        // Use inline style instead of Tailwind 'hidden' class (avoids CSS purge issues)
+        const storageKey   = 'erp_panel_' + headerId + '_collapsed';
+        const isCollapsed  = localStorage.getItem(storageKey) === 'true';
+
         if (isCollapsed) {
-            body.classList.add('hidden');
+            body.style.display = 'none';
             header.classList.add('collapsed');
         }
 
-        header.addEventListener('click', function() {
-            const collapsed = body.classList.toggle('hidden');
-            header.classList.toggle('collapsed', collapsed);
-            localStorage.setItem(headerId + '_collapsed', collapsed ? 'true' : 'false');
+        header.addEventListener('click', function () {
+            const nowHidden = body.style.display === 'none';
+            body.style.display = nowHidden ? '' : 'none';
+            header.classList.toggle('collapsed', !nowHidden);
+            localStorage.setItem(storageKey, nowHidden ? 'false' : 'true');
         });
     }
 
-    initCollapsible('erp-connection-header', 'erp-connection-body');
-    initCollapsible('erp-sync-header', 'erp-sync-body');
+    // Defer execution so Bagisto's Vue instance finishes mounting the `v-configurable` inputs
+    setTimeout(function () {
+        const anchor = document.getElementById('erp-connection-header');
+        if (anchor) {
+            // Find the shared parent container (the .box-shadow card)
+            const sharedCard = anchor.closest('.box-shadow') || anchor.parentElement?.parentElement;
+            
+            if (sharedCard) {
+                // Get all direct child rows in the card
+                const allRows = Array.from(sharedCard.children);
+
+                const connectionRoot = anchor.closest('.mb-4');
+                const syncAnchor = document.getElementById('erp-sync-header');
+                const syncRoot = syncAnchor ? syncAnchor.closest('.mb-4') : null;
+
+                if (connectionRoot && syncRoot) {
+                    const connIdx = allRows.indexOf(connectionRoot);
+                    const syncIdx = allRows.indexOf(syncRoot);
+
+                    if (connIdx > -1 && syncIdx > -1) {
+                        // Credential rows are all elements before our Part 1 div
+                        const credentialRows = allRows.slice(0, connIdx);
+                        // Auto-sync rows are all elements after our Part 2 div
+                        const autoSyncRows = allRows.slice(syncIdx + 1);
+
+                        // Move credential field rows into erp-connection-body (at the beginning)
+                        const connectionBody = document.getElementById('erp-connection-body');
+                        if (connectionBody) {
+                            // Reverse the array so insertBefore keeps the original order
+                            credentialRows.reverse().forEach(row => {
+                                connectionBody.insertBefore(row, connectionBody.firstChild);
+                            });
+                        }
+
+                        // Move auto-sync field rows into erp-sync-body (at the end)
+                        const syncBody = document.getElementById('erp-sync-body');
+                        if (syncBody) {
+                            autoSyncRows.forEach(row => syncBody.appendChild(row));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Initialize collapsibles AFTER DOM manipulation
+        initCollapsible('erp-connection-header', 'erp-connection-body');
+        initCollapsible('erp-sync-header', 'erp-sync-body');
+    }, 400); // 400ms delay to ensure Vue has finished rendering
 
     // Smart Watchers: Lock the sync panel if any connection input is modified
     const credentialInputs = [
