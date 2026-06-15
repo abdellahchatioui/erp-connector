@@ -1,11 +1,4 @@
-<style>
-    .erp-collapse-header .chevron-icon {
-        transition: transform 0.2s ease-in-out;
-    }
-    .erp-collapse-header.collapsed .chevron-icon {
-        transform: rotate(-90deg);
-    }
-</style>
+
 
 {{-- =====================================================================
      Part 1 — Connection Test
@@ -19,7 +12,10 @@
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Test connection credentials, save settings, or import settings from a JSON file.</p>
             </div>
         </div>
-        <span class="chevron-icon transform transition-transform duration-200 text-gray-400 dark:text-gray-500 text-base">▼</span>
+        <div class="text-gray-400 dark:text-gray-500">
+            <svg style="display: block;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-down-up size-4 icon-collapse"><path d="m7 20 5-5 5 5"></path><path d="m7 4 5 5 5-5"></path></svg>
+            <svg style="display: none;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-up-down size-4 icon-expand"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+        </div>
     </div>
     <!-- Content Body -->
     <div id="erp-connection-body" class="p-5">
@@ -79,7 +75,10 @@
                   class="text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 font-medium">
                 🔒 Locked
             </span>
-            <span class="chevron-icon transform transition-transform duration-200 text-gray-400 dark:text-gray-500 text-base">▼</span>
+            <div class="text-gray-400 dark:text-gray-500">
+                <svg style="display: block;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-down-up size-4 icon-collapse"><path d="m7 20 5-5 5 5"></path><path d="m7 4 5 5 5-5"></path></svg>
+                <svg style="display: none;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-up-down size-4 icon-expand"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+            </div>
         </div>
     </div>
     <!-- Content Body -->
@@ -284,20 +283,30 @@
         const body   = document.getElementById(bodyId);
         if (!header || !body) return;
 
-        // Use inline style instead of Tailwind 'hidden' class (avoids CSS purge issues)
+        const iconCollapse = header.querySelector('.icon-collapse');
+        const iconExpand   = header.querySelector('.icon-expand');
+
+        function updateIcons(isCollapsedState) {
+            if (iconCollapse) iconCollapse.style.display = isCollapsedState ? 'none' : 'block';
+            if (iconExpand)   iconExpand.style.display   = isCollapsedState ? 'block' : 'none';
+        }
+
         const storageKey   = 'erp_panel_' + headerId + '_collapsed';
         const isCollapsed  = localStorage.getItem(storageKey) === 'true';
 
         if (isCollapsed) {
             body.style.display = 'none';
-            header.classList.add('collapsed');
         }
+        updateIcons(isCollapsed);
 
         header.addEventListener('click', function () {
             const nowHidden = body.style.display === 'none';
-            body.style.display = nowHidden ? '' : 'none';
-            header.classList.toggle('collapsed', !nowHidden);
-            localStorage.setItem(storageKey, nowHidden ? 'false' : 'true');
+            const willBeHidden = !nowHidden;
+            
+            body.style.display = willBeHidden ? 'none' : '';
+            updateIcons(willBeHidden);
+            
+            localStorage.setItem(storageKey, willBeHidden ? 'true' : 'false');
         });
     }
 
