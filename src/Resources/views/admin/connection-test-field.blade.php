@@ -31,17 +31,22 @@
             <span id="erp-test-status" class="text-sm font-semibold"></span>
         </div>
 
-        <div>
-            <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+        <div class="mb-2 flex items-center justify-between">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
                 ERP Configuration Import
             </label>
-            <div id="erp-drop-zone"
+            <button type="button" id="erp-download-template-btn" class="text-xs font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                📥 Download Template
+            </button>
+        </div>
+        <div>
+            <label for="erp-config-file" id="erp-drop-zone"
                  class="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl px-6 py-8 text-center cursor-pointer bg-white dark:bg-gray-950 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-gray-800 transition-all duration-200">
                 <div class="text-4xl">📂</div>
                 <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">Drag &amp; Drop ERP Config JSON</div>
                 <div class="text-xs text-gray-400">or click to upload</div>
-                <input type="file" id="erp-config-file" accept=".json" class="hidden">
-            </div>
+            </label>
+            <input type="file" id="erp-config-file" accept=".json" style="display:none;">
             <div id="erp-upload-status" class="mt-3 text-sm font-semibold"></div>
         </div>
     </div>
@@ -277,7 +282,7 @@
         updateSyncPanelState(false);
     }
 
-    // Collapsible Panels — deferred so Bagisto/Vue finishes DOM hydration first
+    // Collapsible Panels
     function initCollapsible(headerId, bodyId) {
         const header = document.getElementById(headerId);
         const body   = document.getElementById(bodyId);
@@ -291,8 +296,8 @@
             if (iconExpand)   iconExpand.style.display   = isCollapsedState ? 'block' : 'none';
         }
 
-        const storageKey   = 'erp_panel_' + headerId + '_collapsed';
-        const isCollapsed  = localStorage.getItem(storageKey) === 'true';
+        const storageKey  = 'erp_panel_' + headerId + '_collapsed';
+        const isCollapsed = localStorage.getItem(storageKey) === 'true';
 
         if (isCollapsed) {
             body.style.display = 'none';
@@ -300,12 +305,10 @@
         updateIcons(isCollapsed);
 
         header.addEventListener('click', function () {
-            const nowHidden = body.style.display === 'none';
+            const nowHidden    = body.style.display === 'none';
             const willBeHidden = !nowHidden;
-            
             body.style.display = willBeHidden ? 'none' : '';
             updateIcons(willBeHidden);
-            
             localStorage.setItem(storageKey, willBeHidden ? 'true' : 'false');
         });
     }
@@ -314,37 +317,34 @@
     setTimeout(function () {
         const anchor = document.getElementById('erp-connection-header');
         if (anchor) {
-            // Find the shared parent container (the .box-shadow card)
             const sharedCard = anchor.closest('.box-shadow') || anchor.parentElement?.parentElement;
             
             if (sharedCard) {
-                // Get all direct child rows in the card
                 const allRows = Array.from(sharedCard.children);
 
                 const connectionRoot = anchor.closest('.mb-4');
-                const syncAnchor = document.getElementById('erp-sync-header');
-                const syncRoot = syncAnchor ? syncAnchor.closest('.mb-4') : null;
+                const syncAnchor    = document.getElementById('erp-sync-header');
+                const syncRoot      = syncAnchor ? syncAnchor.closest('.mb-4') : null;
 
                 if (connectionRoot && syncRoot) {
                     const connIdx = allRows.indexOf(connectionRoot);
                     const syncIdx = allRows.indexOf(syncRoot);
 
                     if (connIdx > -1 && syncIdx > -1) {
-                        // Credential rows are all elements before our Part 1 div
+                        // Credential rows: everything before our connection panel
                         const credentialRows = allRows.slice(0, connIdx);
-                        // Auto-sync rows are all elements after our Part 2 div
-                        const autoSyncRows = allRows.slice(syncIdx + 1);
+                        // Auto-sync rows: everything after our sync panel
+                        const autoSyncRows   = allRows.slice(syncIdx + 1);
 
-                        // Move credential field rows into erp-connection-body (at the beginning)
+                        // Move credential rows INTO erp-connection-body (before our buttons)
                         const connectionBody = document.getElementById('erp-connection-body');
                         if (connectionBody) {
-                            // Reverse the array so insertBefore keeps the original order
                             credentialRows.reverse().forEach(row => {
                                 connectionBody.insertBefore(row, connectionBody.firstChild);
                             });
                         }
 
-                        // Move auto-sync field rows into erp-sync-body (at the end)
+                        // Move auto-sync rows INTO erp-sync-body
                         const syncBody = document.getElementById('erp-sync-body');
                         if (syncBody) {
                             autoSyncRows.forEach(row => syncBody.appendChild(row));
@@ -357,7 +357,10 @@
         // Initialize collapsibles AFTER DOM manipulation
         initCollapsible('erp-connection-header', 'erp-connection-body');
         initCollapsible('erp-sync-header', 'erp-sync-body');
-    }, 400); // 400ms delay to ensure Vue has finished rendering
+
+        // Check initial sync lock state
+        updateSyncPanelState();
+    }, 400);
 
     // Smart Watchers: Lock the sync panel if any connection input is modified
     const credentialInputs = [
@@ -596,50 +599,30 @@
     setInterval(refreshAutoSyncStatus, 10000);
     setInterval(updateAutoCountdown, 1000);
 
-    // Connection Panel
-    (function setupConnectionPanel() {
-        const dropZone = $('erp-drop-zone');
-        const fileInput = $('erp-config-file');
+    // ===== Connection Panel: Upload & Download =====
+    // Uses document-level event delegation so it survives DOM manipulation by Vue.
+    function setupConnectionPanel() {
         const uploadStatus = $('erp-upload-status');
-
-        if (dropZone && fileInput) {
-            dropZone.addEventListener('click', () => fileInput.click());
-            dropZone.addEventListener('dragover', e => {
-                e.preventDefault();
-                dropZone.style.borderColor = '#2563eb';
-            });
-            dropZone.addEventListener('dragleave', () => dropZone.style.borderColor = '');
-            dropZone.addEventListener('drop', e => {
-                e.preventDefault();
-                dropZone.style.borderColor = '';
-                const file = e.dataTransfer.files[0];
-                if (file) handleJsonFile(file);
-            });
-            fileInput.addEventListener('change', e => {
-                const file = e.target.files[0];
-                if (file) handleJsonFile(file);
-            });
-        }
 
         function handleJsonFile(file) {
             if (!file.name.endsWith('.json')) {
-                if (uploadStatus) uploadStatus.innerHTML = '❌ Invalid JSON file';
+                if (uploadStatus) uploadStatus.innerHTML = '❌ Invalid file. Must be a .json file.';
                 return;
             }
             const reader = new FileReader();
             reader.onload = function (event) {
                 try {
                     const config = JSON.parse(event.target.result);
-                    setField('backend_url', config.backend_url);
-                    setField('erp_token', config.erp_token);
-                    setField('keycloak_token_url', config.keycloak_token_url);
-                    setField('keycloak_client_id', config.keycloak_client_id);
+                    setField('backend_url',            config.backend_url);
+                    setField('erp_token',              config.erp_token);
+                    setField('keycloak_token_url',     config.keycloak_token_url);
+                    setField('keycloak_client_id',     config.keycloak_client_id);
                     setField('keycloak_client_secret', config.keycloak_client_secret);
-                    setField('keycloak_username', config.keycloak_username);
-                    setField('keycloak_password', config.keycloak_password);
-                    if (uploadStatus) uploadStatus.innerHTML = '✅ Config imported';
+                    setField('keycloak_username',      config.keycloak_username);
+                    setField('keycloak_password',      config.keycloak_password);
+                    if (uploadStatus) uploadStatus.innerHTML = '✅ Config imported successfully!';
                 } catch (e) {
-                    if (uploadStatus) uploadStatus.innerHTML = '❌ Invalid JSON structure';
+                    if (uploadStatus) uploadStatus.innerHTML = '❌ Invalid JSON structure. Please use the template.';
                 }
             };
             reader.readAsText(file);
@@ -649,11 +632,73 @@
             const input = document.querySelector(`input[name*="${name}"]`);
             if (input && value !== undefined) {
                 input.value = value;
-                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('input',  { bubbles: true }));
                 input.dispatchEvent(new Event('change', { bubbles: true }));
             }
         }
-    })();
+
+        // Delegated: dragover on drop zone
+        document.addEventListener('dragover', function (e) {
+            const dz = e.target.closest('#erp-drop-zone');
+            if (dz) {
+                e.preventDefault();
+                dz.style.borderColor = '#2563eb';
+            }
+        });
+
+        // Delegated: dragleave on drop zone
+        document.addEventListener('dragleave', function (e) {
+            const dz = e.target.closest('#erp-drop-zone');
+            if (dz) dz.style.borderColor = '';
+        });
+
+        // Delegated: drop on drop zone
+        document.addEventListener('drop', function (e) {
+            const dz = e.target.closest('#erp-drop-zone');
+            if (dz) {
+                e.preventDefault();
+                dz.style.borderColor = '';
+                const file = e.dataTransfer.files[0];
+                if (file) handleJsonFile(file);
+            }
+        });
+
+        // Delegated: file input change — catches change on #erp-config-file via bubbling
+        document.addEventListener('change', function (e) {
+            if (e.target && e.target.id === 'erp-config-file') {
+                const file = e.target.files[0];
+                if (file) {
+                    handleJsonFile(file);
+                    setTimeout(function() { e.target.value = ''; }, 100); // allow same file to be re-selected
+                }
+            }
+        });
+
+        // Delegated: download template button
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('#erp-download-template-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const template = {
+                    "backend_url":            "https://your-erp-system.com/api",
+                    "erp_token":              "your_secure_token",
+                    "keycloak_token_url":     "http://localhost:8080/realms/demo/protocol/openid-connect/token",
+                    "keycloak_client_id":     "your_client_id",
+                    "keycloak_client_secret": "your_client_secret",
+                    "keycloak_username":      "your_username",
+                    "keycloak_password":      "your_password"
+                };
+                const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(template, null, 4));
+                const a = document.createElement('a');
+                a.setAttribute('href', dataStr);
+                a.setAttribute('download', 'config_template.json');
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
+        });
+    }
+    setupConnectionPanel();
 
     // Save Button
     document.addEventListener('click', function (event) {
