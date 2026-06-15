@@ -478,6 +478,7 @@
                     setField('erp_token', config.erp_token);
                     setField('keycloak_token_url', config.keycloak_token_url);
                     setField('keycloak_client_id', config.keycloak_client_id);
+                    setField('keycloak_client_secret', config.keycloak_client_secret);
                     setField('keycloak_username', config.keycloak_username);
                     setField('keycloak_password', config.keycloak_password);
                     if (uploadStatus) uploadStatus.innerHTML = '✅ Config imported';
@@ -568,22 +569,25 @@
 
         event.preventDefault();
 
-        const urlEl           = document.querySelector('input[name*="backend_url"]') || document.getElementById('erp[settings][general][backend_url]');
-        const tokenEl         = document.querySelector('input[name*="erp_token"]') || document.getElementById('erp[settings][general][erp_token]');
-        const keycloakUrlEl   = document.querySelector('input[name*="keycloak_token_url"]');
-        const keycloakClientEl= document.querySelector('input[name*="keycloak_client_id"]');
-        const keycloakUserEl  = document.querySelector('input[name*="keycloak_username"]');
-        const keycloakPassEl  = document.querySelector('input[name*="keycloak_password"]');
+        const urlEl              = document.querySelector('input[name*="backend_url"]') || document.getElementById('erp[settings][general][backend_url]');
+        const tokenEl            = document.querySelector('input[name*="erp_token"]') || document.getElementById('erp[settings][general][erp_token]');
+        const keycloakUrlEl      = document.querySelector('input[name*="keycloak_token_url"]');
+        const keycloakClientEl   = document.querySelector('input[name*="keycloak_client_id"]');
+        const keycloakSecretEl   = document.querySelector('input[name*="keycloak_client_secret"]');
+        const keycloakUserEl     = document.querySelector('input[name*="keycloak_username"]');
+        const keycloakPassEl     = document.querySelector('input[name*="keycloak_password"]');
 
         const statusEl = $('erp-test-status');
 
-        const backendUrl       = urlEl ? urlEl.value.trim() : '';
-        const erpToken         = tokenEl ? tokenEl.value.trim() : '';
-        const keycloakTokenUrl = keycloakUrlEl ? keycloakUrlEl.value.trim() : '';
-        const keycloakClientId = keycloakClientEl ? keycloakClientEl.value.trim() : '';
-        const keycloakUsername = keycloakUserEl ? keycloakUserEl.value.trim() : '';
-        const keycloakPassword = keycloakPassEl ? keycloakPassEl.value.trim() : '';
+        const backendUrl           = urlEl ? urlEl.value.trim() : '';
+        const erpToken             = tokenEl ? tokenEl.value.trim() : '';
+        const keycloakTokenUrl     = keycloakUrlEl ? keycloakUrlEl.value.trim() : '';
+        const keycloakClientId     = keycloakClientEl ? keycloakClientEl.value.trim() : '';
+        const keycloakClientSecret = keycloakSecretEl ? keycloakSecretEl.value.trim() : '';
+        const keycloakUsername     = keycloakUserEl ? keycloakUserEl.value.trim() : '';
+        const keycloakPassword     = keycloakPassEl ? keycloakPassEl.value.trim() : '';
 
+        // client_secret is optional — public Keycloak clients don't need it
         if (!backendUrl || !erpToken || !keycloakTokenUrl || !keycloakClientId || !keycloakUsername || !keycloakPassword) {
             alert("Please fill out all the connection details first.");
             if (statusEl) {
@@ -610,6 +614,7 @@
                 erp_token: erpToken,
                 keycloak_token_url: keycloakTokenUrl,
                 keycloak_client_id: keycloakClientId,
+                keycloak_client_secret: keycloakClientSecret,
                 keycloak_username: keycloakUsername,
                 keycloak_password: keycloakPassword,
             }),

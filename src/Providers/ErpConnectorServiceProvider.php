@@ -39,6 +39,11 @@ class ErpConnectorServiceProvider extends ServiceProvider
                 $updated = true;
             }
 
+            if (isset($general['keycloak_client_secret']) && !empty($general['keycloak_client_secret'])) {
+                $general['keycloak_client_secret'] = \Illuminate\Support\Facades\Crypt::encryptString($general['keycloak_client_secret']);
+                $updated = true;
+            }
+
             if ($updated) {
                 request()->merge([
                     'erp' => array_merge(request()->input('erp', []), [

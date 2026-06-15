@@ -104,6 +104,27 @@ class Config
     }
 
     /**
+     * Get Keycloak Client Secret (Decrypted)
+     *
+     * @return string|null
+     */
+    public function getKeycloakClientSecret()
+    {
+        $secret = core()->getConfigData('erp.settings.general.keycloak_client_secret');
+
+        if (! $secret) {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($secret);
+        } catch (\Exception $e) {
+            // Fallback for plain text secret if not yet encrypted
+            return $secret;
+        }
+    }
+
+    /**
      * Check if automatic product sync is enabled.
      */
     public function isAutoSyncEnabled(): bool
