@@ -27,7 +27,7 @@ A powerful, secure integration package for [Bagisto](https://bagisto.com/) that 
 In your Bagisto project root, run:
 
 ```bash
-composer require abdellahchatioui/erp-connector
+composer require abdellahchatioui/erp-connector:dev-main
 ```
 
 ### 2. Clear Cache

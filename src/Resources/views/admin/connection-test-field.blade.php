@@ -1,8 +1,24 @@
+
+
 {{-- =====================================================================
      Part 1 — Connection Test
      ===================================================================== --}}
-<div class="mb-4 last:!mb-0 mt-4">
-    <div class="p-5 rounded-xl border border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-800">
+<div class="mb-4 last:!mb-0 mt-4 rounded-xl border border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-800 overflow-hidden shadow-sm">
+    <!-- Header -->
+    <div id="erp-connection-header" class="erp-collapse-header flex items-center justify-between p-5 cursor-pointer select-none border-b border-gray-100 dark:border-gray-850 hover:bg-gray-100/30 dark:hover:bg-gray-800/10 transition-all duration-200">
+        <div class="flex items-center gap-3">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Connection Actions & Settings Import</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Test connection credentials, save settings, or import settings from a JSON file.</p>
+            </div>
+        </div>
+        <div class="text-gray-400 dark:text-gray-500">
+            <svg style="display: block;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-down-up size-4 icon-collapse"><path d="m7 20 5-5 5 5"></path><path d="m7 4 5 5 5-5"></path></svg>
+            <svg style="display: none;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-up-down size-4 icon-expand"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+        </div>
+    </div>
+    <!-- Content Body -->
+    <div id="erp-connection-body" class="p-5">
         <div class="flex items-center gap-3 flex-wrap mb-5">
             <button type="button" id="erp-custom-save-btn"
                     class="primary-button px-5 py-2.5 text-sm font-semibold rounded-lg transition-all">
@@ -45,17 +61,33 @@
 </div>
 
 {{-- Part 2 — Sync Panel --}}
-<div class="mb-4 last:!mb-0 mt-4">
-    <div id="erp-sync-panel" class="p-5 rounded-xl border border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-800">
+<div class="mb-4 last:!mb-0 mt-4 rounded-xl border border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-800 overflow-hidden shadow-sm">
+    <!-- Header -->
+    <div id="erp-sync-header" class="erp-collapse-header flex items-center justify-between p-5 cursor-pointer select-none border-b border-gray-100 dark:border-gray-850 hover:bg-gray-100/30 dark:hover:bg-gray-800/10 transition-all duration-200">
+        <div class="flex items-center gap-3">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Product Synchronization Engine</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Run manual synchronization or monitor background auto-sync status.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <span id="sync-lock-status" 
+                  class="text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 font-medium">
+                🔒 Locked
+            </span>
+            <div class="text-gray-400 dark:text-gray-500">
+                <svg style="display: block;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-down-up size-4 icon-collapse"><path d="m7 20 5-5 5 5"></path><path d="m7 4 5 5 5-5"></path></svg>
+                <svg style="display: none;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-up-down size-4 icon-expand"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+            </div>
+        </div>
+    </div>
+    <!-- Content Body -->
+    <div id="erp-sync-body" class="p-5">
         <div class="flex items-center justify-between gap-4 flex-wrap border-b border-gray-200 dark:border-gray-800 pb-4 mb-5">
             <div class="flex items-center gap-3">
                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
-                    Product Synchronization Engine
+                    Sync Engine Control
                 </label>
-                <span id="sync-lock-status" 
-                      class="text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 font-medium">
-                    🔒 Locked
-                </span>
             </div>
             <span id="erp-sync-badge" class="px-3 py-1 text-xs font-semibold rounded-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">Idle</span>
         </div>
@@ -206,24 +238,148 @@
     function updateSyncPanelState(success) {
         isConnected = success;
         const syncBtn = $('erp-sync-btn');
+        const autoSaveBtn = $('erp-auto-save-btn');
         const lockStatus = $('sync-lock-status');
 
+        const autoEnabledCheckbox = document.querySelector('input[type="checkbox"][name*="auto_sync_enabled"]') 
+                                  || document.querySelector('input[name*="auto_sync_enabled"]');
+        const autoIntervalSelect = document.querySelector('select[name*="auto_sync_interval"]') 
+                                 || document.querySelector('input[name*="auto_sync_interval"]');
+
         if (success) {
-            syncBtn.disabled = false;
-            lockStatus.innerHTML = '✅ Unlocked';
-            lockStatus.className = 'text-xs px-3 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 font-medium';
+            if (syncBtn) syncBtn.disabled = false;
+            if (autoSaveBtn) autoSaveBtn.disabled = false;
+            if (autoEnabledCheckbox) autoEnabledCheckbox.disabled = false;
+            if (autoIntervalSelect) autoIntervalSelect.disabled = false;
+
+            if (lockStatus) {
+                lockStatus.innerHTML = '✅ Unlocked';
+                lockStatus.className = 'text-xs px-3 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 font-medium';
+            }
             localStorage.setItem('erp_connection_success', 'true');
         } else {
-            syncBtn.disabled = true;
-            lockStatus.innerHTML = '🔒 Locked';
-            lockStatus.className = 'text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 font-medium';
+            if (syncBtn) syncBtn.disabled = true;
+            if (autoSaveBtn) autoSaveBtn.disabled = true;
+            if (autoEnabledCheckbox) autoEnabledCheckbox.disabled = true;
+            if (autoIntervalSelect) autoIntervalSelect.disabled = true;
+
+            if (lockStatus) {
+                lockStatus.innerHTML = '🔒 Locked';
+                lockStatus.className = 'text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 font-medium';
+            }
         }
     }
 
     // Load saved state
     if (localStorage.getItem('erp_connection_success') === 'true') {
         updateSyncPanelState(true);
+    } else {
+        updateSyncPanelState(false);
     }
+
+    // Collapsible Panels — deferred so Bagisto/Vue finishes DOM hydration first
+    function initCollapsible(headerId, bodyId) {
+        const header = document.getElementById(headerId);
+        const body   = document.getElementById(bodyId);
+        if (!header || !body) return;
+
+        const iconCollapse = header.querySelector('.icon-collapse');
+        const iconExpand   = header.querySelector('.icon-expand');
+
+        function updateIcons(isCollapsedState) {
+            if (iconCollapse) iconCollapse.style.display = isCollapsedState ? 'none' : 'block';
+            if (iconExpand)   iconExpand.style.display   = isCollapsedState ? 'block' : 'none';
+        }
+
+        const storageKey   = 'erp_panel_' + headerId + '_collapsed';
+        const isCollapsed  = localStorage.getItem(storageKey) === 'true';
+
+        if (isCollapsed) {
+            body.style.display = 'none';
+        }
+        updateIcons(isCollapsed);
+
+        header.addEventListener('click', function () {
+            const nowHidden = body.style.display === 'none';
+            const willBeHidden = !nowHidden;
+            
+            body.style.display = willBeHidden ? 'none' : '';
+            updateIcons(willBeHidden);
+            
+            localStorage.setItem(storageKey, willBeHidden ? 'true' : 'false');
+        });
+    }
+
+    // Defer execution so Bagisto's Vue instance finishes mounting the `v-configurable` inputs
+    setTimeout(function () {
+        const anchor = document.getElementById('erp-connection-header');
+        if (anchor) {
+            // Find the shared parent container (the .box-shadow card)
+            const sharedCard = anchor.closest('.box-shadow') || anchor.parentElement?.parentElement;
+            
+            if (sharedCard) {
+                // Get all direct child rows in the card
+                const allRows = Array.from(sharedCard.children);
+
+                const connectionRoot = anchor.closest('.mb-4');
+                const syncAnchor = document.getElementById('erp-sync-header');
+                const syncRoot = syncAnchor ? syncAnchor.closest('.mb-4') : null;
+
+                if (connectionRoot && syncRoot) {
+                    const connIdx = allRows.indexOf(connectionRoot);
+                    const syncIdx = allRows.indexOf(syncRoot);
+
+                    if (connIdx > -1 && syncIdx > -1) {
+                        // Credential rows are all elements before our Part 1 div
+                        const credentialRows = allRows.slice(0, connIdx);
+                        // Auto-sync rows are all elements after our Part 2 div
+                        const autoSyncRows = allRows.slice(syncIdx + 1);
+
+                        // Move credential field rows into erp-connection-body (at the beginning)
+                        const connectionBody = document.getElementById('erp-connection-body');
+                        if (connectionBody) {
+                            // Reverse the array so insertBefore keeps the original order
+                            credentialRows.reverse().forEach(row => {
+                                connectionBody.insertBefore(row, connectionBody.firstChild);
+                            });
+                        }
+
+                        // Move auto-sync field rows into erp-sync-body (at the end)
+                        const syncBody = document.getElementById('erp-sync-body');
+                        if (syncBody) {
+                            autoSyncRows.forEach(row => syncBody.appendChild(row));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Initialize collapsibles AFTER DOM manipulation
+        initCollapsible('erp-connection-header', 'erp-connection-body');
+        initCollapsible('erp-sync-header', 'erp-sync-body');
+    }, 400); // 400ms delay to ensure Vue has finished rendering
+
+    // Smart Watchers: Lock the sync panel if any connection input is modified
+    const credentialInputs = [
+        'input[name*="backend_url"]',
+        'input[name*="erp_token"]',
+        'input[name*="keycloak_token_url"]',
+        'input[name*="keycloak_client_id"]',
+        'input[name*="keycloak_client_secret"]',
+        'input[name*="keycloak_username"]',
+        'input[name*="keycloak_password"]'
+    ];
+    credentialInputs.forEach(selector => {
+        const input = document.querySelector(selector);
+        if (input) {
+            input.addEventListener('input', () => {
+                if (isConnected) {
+                    updateSyncPanelState(false);
+                    localStorage.removeItem('erp_connection_success');
+                }
+            });
+        }
+    });
 
     let nextAutoSyncAt = null;
     let lastAutoSyncTargetKey = null;
@@ -478,6 +634,7 @@
                     setField('erp_token', config.erp_token);
                     setField('keycloak_token_url', config.keycloak_token_url);
                     setField('keycloak_client_id', config.keycloak_client_id);
+                    setField('keycloak_client_secret', config.keycloak_client_secret);
                     setField('keycloak_username', config.keycloak_username);
                     setField('keycloak_password', config.keycloak_password);
                     if (uploadStatus) uploadStatus.innerHTML = '✅ Config imported';
@@ -568,22 +725,25 @@
 
         event.preventDefault();
 
-        const urlEl           = document.querySelector('input[name*="backend_url"]') || document.getElementById('erp[settings][general][backend_url]');
-        const tokenEl         = document.querySelector('input[name*="erp_token"]') || document.getElementById('erp[settings][general][erp_token]');
-        const keycloakUrlEl   = document.querySelector('input[name*="keycloak_token_url"]');
-        const keycloakClientEl= document.querySelector('input[name*="keycloak_client_id"]');
-        const keycloakUserEl  = document.querySelector('input[name*="keycloak_username"]');
-        const keycloakPassEl  = document.querySelector('input[name*="keycloak_password"]');
+        const urlEl              = document.querySelector('input[name*="backend_url"]') || document.getElementById('erp[settings][general][backend_url]');
+        const tokenEl            = document.querySelector('input[name*="erp_token"]') || document.getElementById('erp[settings][general][erp_token]');
+        const keycloakUrlEl      = document.querySelector('input[name*="keycloak_token_url"]');
+        const keycloakClientEl   = document.querySelector('input[name*="keycloak_client_id"]');
+        const keycloakSecretEl   = document.querySelector('input[name*="keycloak_client_secret"]');
+        const keycloakUserEl     = document.querySelector('input[name*="keycloak_username"]');
+        const keycloakPassEl     = document.querySelector('input[name*="keycloak_password"]');
 
         const statusEl = $('erp-test-status');
 
-        const backendUrl       = urlEl ? urlEl.value.trim() : '';
-        const erpToken         = tokenEl ? tokenEl.value.trim() : '';
-        const keycloakTokenUrl = keycloakUrlEl ? keycloakUrlEl.value.trim() : '';
-        const keycloakClientId = keycloakClientEl ? keycloakClientEl.value.trim() : '';
-        const keycloakUsername = keycloakUserEl ? keycloakUserEl.value.trim() : '';
-        const keycloakPassword = keycloakPassEl ? keycloakPassEl.value.trim() : '';
+        const backendUrl           = urlEl ? urlEl.value.trim() : '';
+        const erpToken             = tokenEl ? tokenEl.value.trim() : '';
+        const keycloakTokenUrl     = keycloakUrlEl ? keycloakUrlEl.value.trim() : '';
+        const keycloakClientId     = keycloakClientEl ? keycloakClientEl.value.trim() : '';
+        const keycloakClientSecret = keycloakSecretEl ? keycloakSecretEl.value.trim() : '';
+        const keycloakUsername     = keycloakUserEl ? keycloakUserEl.value.trim() : '';
+        const keycloakPassword     = keycloakPassEl ? keycloakPassEl.value.trim() : '';
 
+        // client_secret is optional — public Keycloak clients don't need it
         if (!backendUrl || !erpToken || !keycloakTokenUrl || !keycloakClientId || !keycloakUsername || !keycloakPassword) {
             alert("Please fill out all the connection details first.");
             if (statusEl) {
@@ -610,6 +770,7 @@
                 erp_token: erpToken,
                 keycloak_token_url: keycloakTokenUrl,
                 keycloak_client_id: keycloakClientId,
+                keycloak_client_secret: keycloakClientSecret,
                 keycloak_username: keycloakUsername,
                 keycloak_password: keycloakPassword,
             }),

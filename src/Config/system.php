@@ -51,6 +51,14 @@ return [
                 'locale_based'  => false,
             ],
             [
+                'name'          => 'keycloak_client_secret',
+                'title'         => 'erp::app.admin.system.keycloak-client-secret',
+                'type'          => 'password',
+                'validation'    => '',
+                'channel_based' => true,
+                'locale_based'  => false,
+            ],
+            [
                 'name'          => 'keycloak_username',
                 'title'         => 'erp::app.admin.system.keycloak-username',
                 'type'          => 'text',
